@@ -1,0 +1,64 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // 配置名称
+            "name": "gdb debug",
+            // debug类型
+            "type": "cppdbg",
+            // 调试请求类型"launch"（启动调试）或 "attach"（附加到已运行的进程）
+            "request": "launch",
+            // 指定要调试的程序路径
+            "program": "${workspaceRoot}/build/boot/boot.elf",
+            // 工作目录
+            "cwd": "${workspaceRoot}",
+            // 外部控制台运行程序
+            "externalConsole": false,
+            // debug开始前是否需要暂停
+            "stopAtEntry": false,
+            // 调试器
+            "MIMode": "gdb",
+            // 调试器路径
+            "miDebuggerPath": "/usr/bin/gdb",
+            // gdb debug远程端口以及地址信息
+            "miDebuggerServerAddress": "127.0.0.1:1234",
+            // 远程机器架构
+            // "targetArchitecture": "x86"
+            // 链接器链接后停止
+            "stopAtConnect": true,
+            // GDB启动参数
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "将反汇编风格设置为 Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+            ],
+            "linux": {
+                "preLaunchTask": "调试准备", // 仅在windows下可自动运行
+                "miDebuggerPath": "gdb", // linux下的特殊配置
+            },
+            // 加载符号文件便于debug
+            "postRemoteConnectCommands": [
+                {
+                    "description": "加载boot符号文件",
+                    "text": "-file-symbol-file ./build/boot/boot.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "运行至0x7c00",
+                    "text": "-exec-until *0x7c00",
+                    "ignoreFailures": false
+                },
+            ]
+        }
+    ]
+}
