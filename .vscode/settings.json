@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "loader_16.h": "c",
+        "cpu_instr.h": "c"
+    }
+}

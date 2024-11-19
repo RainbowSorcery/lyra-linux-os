@@ -1,5 +1,4 @@
 # ----------------公共配置--------------------------------
-
 # cmake最低版本
 cmake_minimum_required(VERSION 3.28.3)
 
@@ -33,20 +32,9 @@ set(OBJDUMP_TOOL "x86_64-linux-gnu-objdump")
 # elf文件查看器，用户查看elf文件配置信息
 set(READELF_TOOL "x86_64-linux-gnu-readelf")
 
-
-# ------------------------------boot工程配置------------------------------------
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/boot)
-
-# 设置链接器配置信息
-set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x7c00  --section-start boot_end=0x7dfe -o boot/boot.elf")
-
-# 设置要编译链接的文件列表
-file(GLOB C_LIST "boot/*.c" "boot/*.h")
-add_executable(${PROJECT_NAME} boot/start.s ${C_LIST})
-
-add_custom_command(TARGET ${PROJECT_NAME}
-                   POST_BUILD
-                   COMMAND ${OBJCOPY_TOOL} -O binary boot/boot.elf ${CMAKE_SOURCE_DIR}/image/boot.bin
-                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 boot/boot.elf > boot/boot_dis.txt
-                   COMMAND ${READELF_TOOL} -a boot/boot.elf > boot/boot_elf.txt
+include_directories(
 )
+
+# 底层的若干子项目：含内核及应用程序
+add_subdirectory(./boot)
+# add_subdirectory(./loader)

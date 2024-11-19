@@ -54,6 +54,11 @@
                     "ignoreFailures": false
                 },
                 {
+                    "description": "加载loader符号文件",
+                    "text": "-file-symbol-file ./build/loader/loader.elf",
+                    "ignoreFailures": false
+                },
+                {
                     "description": "运行至0x7c00",
                     "text": "-exec-until *0x7c00",
                     "ignoreFailures": false
