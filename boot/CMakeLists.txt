@@ -12,7 +12,7 @@ add_executable(${PROJECT_NAME} start.s ${C_LIST})
 
 add_custom_command(TARGET ${PROJECT_NAME}
                    POST_BUILD
-                   COMMAND ${OBJCOPY_TOOL} -O binary boot/boot.elf ${CMAKE_SOURCE_DIR}/image/boot.bin
-                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 boot/boot.elf > boot/boot_dis.txt
-                   COMMAND ${READELF_TOOL} -a boot/boot.elf > boot/boot_elf.txt
+                   COMMAND ${OBJCOPY_TOOL} -O binary ${CMAKE_BINARY_DIR}/boot/boot.elf ${CMAKE_SOURCE_DIR}/image/boot.bin
+                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 ${CMAKE_BINARY_DIR}/boot/boot.elf > ${CMAKE_BINARY_DIR}/boot/boot_dis.txt
+                   COMMAND ${READELF_TOOL} -a ${CMAKE_BINARY_DIR}/boot/boot.elf > ${CMAKE_BINARY_DIR}/boot/boot_elf.txt
 )

@@ -37,4 +37,4 @@ include_directories(
 
 # 底层的若干子项目：含内核及应用程序
 add_subdirectory(./boot)
-# add_subdirectory(./loader)
+add_subdirectory(./loader)
