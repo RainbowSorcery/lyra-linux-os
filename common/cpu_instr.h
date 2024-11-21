@@ -1,5 +1,7 @@
 #include "types.h"
 
+
+
 //  为了避免栈空间的浪费，内联函数会在在调用时将内联函数的函数体内容移动到调用的地方在进行编译
 static inline void cli(void)
 {
@@ -14,7 +16,7 @@ static inline void sti(void)
 }
 
 // 读端口
-static inline unit8_t inb(uint16_t port)
+static unit8_t inb(uint16_t port)
 {
     unit8_t rv;
 
@@ -31,7 +33,7 @@ static inline void outb(uint16_t port, unit8_t data)
 
 static inline void lgdt(unint32_t start, uint16_t size)
 {
-    struct gdt
+    struct
     {
         uint16_t limit;
         unint32_t start_l;
