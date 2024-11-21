@@ -5,6 +5,7 @@ __asm__(".code16gcc");
 #include "../common/types.h"
 #include "../common/cpu_instr.h"
 #include "loader_16.h"
+#include "loader.h"
 
 static boot_info_t boot_info;
 
@@ -41,6 +42,11 @@ static void enter_protect_mode(void)
     unit8_t value = inb(port);
     outb(0x92, (value | 0x2));
     lgdt((unint32_t)gdt_table, sizeof(gdt_table));
+    unint32_t cr0 = read_cr0();
+    cr0 = cr0 | 0x1;
+    write_cr0(cr0);
+    // 0x08 是代码段选择子
+    far_jump((unint32_t)8, (unint32_t)protected_mode_entry);
 }
 
 // 读取内存信息

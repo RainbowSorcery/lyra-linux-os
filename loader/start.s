@@ -9,3 +9,9 @@ _start:
     mov $24, %ecx
     int $0x15
     call loader_entry
+
+    .code32
+    .text
+    .global protected_mode_entry
+protected_mode_entry:
+    jmp .

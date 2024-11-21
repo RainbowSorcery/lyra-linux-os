@@ -36,8 +36,8 @@ static inline void lgdt(unint32_t start, uint16_t size)
     struct
     {
         uint16_t limit;
-        unint32_t start_l;
-        unint32_t statt_h;
+        uint16_t start_l;
+        uint16_t statt_h;
     } gdt;
 
     gdt.statt_h = start >> 16;
@@ -45,4 +45,26 @@ static inline void lgdt(unint32_t start, uint16_t size)
     gdt.limit = size;
 
     asm("lgdt %[g]" ::[g] "m"(gdt));
+}
+
+// 读取cr0寄存器的值并返回
+static inline unint32_t read_cr0() 
+{
+    unint32_t rv;
+    asm("mov %%cr0, %%eax" : "=a"(rv));
+
+    return rv;
+}
+
+// 写回cr0寄存器
+static inline void write_cr0(unint32_t val)
+{
+    asm("mov %%eax, %%cr0" ::"a"(val));
+}
+
+// 地址跳转
+static inline void far_jump(unint32_t selector, unint32_t offset) 
+{
+    unint32_t addr[] = {offset, selector};
+    asm("ljmpl *(%[a])" ::[a] "r"(addr));
 }
