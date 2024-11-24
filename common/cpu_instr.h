@@ -14,7 +14,7 @@ static inline void sti(void)
 }
 
 // 读端口
-static unit8_t inb(uint16_t port)
+static inline unit8_t inb(uint16_t port)
 {
     unit8_t rv;
 
@@ -23,11 +23,11 @@ static unit8_t inb(uint16_t port)
     return rv;
 }
 
-static uint16_t inw(uint16_t port)
+static inline uint16_t inw(uint16_t port)
 {
     uint16_t rv;
 
-    asm("in %[p], %%al" : "=a"(rv) : [p] "d"(port));
+    asm("in %[p], %%ax" : "=a"(rv) : [p] "d"(port));
 
     return rv;
 }

@@ -27,7 +27,7 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
     ;
     unit8_t lba1 = sector & 0xff;
     unit8_t lba2 = (sector >> 8) & 0xff;
-    unit8_t lba3 = (sector >> 6) & 0xff;
+    unit8_t lba3 = (sector >> 16) & 0xff;
 
     outb(0x1f3, lba4);
     outb(0x1f4, lba5);
@@ -59,7 +59,9 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
 void loader_kernel()
 {
     ;
-    read_disk(100, 1500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
+    read_disk(100, 500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
+
+    ((void (*)(void))SYSTEM_KERNEL_ADDRESS)();
 
     ;
     for (;;)

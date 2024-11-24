@@ -48,6 +48,7 @@ static void enter_protect_mode(void)
     write_cr0(cr0);
     // 0x08 是代码段选择子 远跳转清空流水线
     far_jump((unint32_t)8, (unint32_t)protected_mode_entry);
+    show_msg("protect mode done.");
 }
 
 // 读取内存信息
@@ -95,7 +96,7 @@ static void detect_memory(void)
         }
     }
 
-    show_msg("memeory read done\n");
+    show_msg("memeory read done.");
 }
 
 void loader_entry()
