@@ -7,7 +7,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 
 
 # 设置链接器配置信息
-set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x8000  -o loader/loader.elf")
+set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x8000  -o ${CMAKE_BINARY_DIR}/loader/loader.elf")
 
 # 设置要编译链接的文件列表
 file(GLOB C_LIST "*.c" "*.h" "${CMAKE_SOURCE_DIR}/common/*.h" "${CMAKE_SOURCE_DIR}/common/*.c")

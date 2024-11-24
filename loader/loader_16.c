@@ -9,7 +9,6 @@ __asm__(".code16gcc");
 
 static boot_info_t boot_info;
 
-
 static void show_msg(const char *msg)
 {
 
@@ -41,11 +40,13 @@ static void enter_protect_mode(void)
     uint16_t port = (uint16_t)0x92;
     unit8_t value = inb(port);
     outb(0x92, (value | 0x2));
+    // 加载gdt表
     lgdt((unint32_t)gdt_table, sizeof(gdt_table));
+    // 设置cr0
     unint32_t cr0 = read_cr0();
     cr0 = cr0 | 0x1;
     write_cr0(cr0);
-    // 0x08 是代码段选择子
+    // 0x08 是代码段选择子 远跳转清空流水线
     far_jump((unint32_t)8, (unint32_t)protected_mode_entry);
 }
 
@@ -102,8 +103,4 @@ void loader_entry()
     detect_memory();
 
     enter_protect_mode();
-
-    for (;;)
-    {
-    }
 }
