@@ -46,16 +46,16 @@
                 "preLaunchTask": "调试准备", // 仅在windows下可自动运行
                 "miDebuggerPath": "gdb", // linux下的特殊配置
             },
-            // 加载符号文件便于debug
+            // 加载符号文件便于debug时将汇编指令与c语言代码进行映射
             "postRemoteConnectCommands": [
                 {
                     "description": "加载boot符号文件",
-                    "text": "-file-symbol-file ./build/boot/boot.elf",
+                    "text": "-file-symbol-file ${workspaceRoot}/build/boot/boot.elf",
                     "ignoreFailures": false
                 },
                 {
                     "description": "加载loader符号文件",
-                    "text": "-file-symbol-file ./build/loader/loader.elf",
+                    "text": "-file-symbol-file ${workspaceRoot}/build/loader/loader.elf",
                     "ignoreFailures": false
                 },
                 {

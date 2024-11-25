@@ -1,53 +1,5 @@
 ## 保护模式
 
-### 启动流程
-
-- 通电
-
-  按下开机键，CPU会从ROM里读取BIOS系统并加载到内存中。
-
-- 执行BIOS程序
-
-  加载完成后会执行BIOS程序
-
-- BIOS自检
-
-  在BIOS执行过程中会对计算机硬件进行自检避免运行出错
-
-- 运行引导代码
-
-  之后会读取硬盘扇区末尾为0x55aa的扇区并加载到内存0x7c00中，一个扇区大小为512字节。我们的操作系统512字节肯定是不够用的，所以我们需要利用引导代码读取我们的操作系统并加载到内存中。
-
-- 进入操作系统
-
-  执行我们的操作系统的代码。
-
-![image-20241014212426778](./assets/image-20241014212426778.png)
-
-.org用于指定接下来代码数据应该设置到什么位置，.org 0x1fe开始写入数据，写入数据内容为0x55, 0xaa
-
-0x1fe的十进制为510，这样就将一个扇区的末尾设置成0x55aa，这样BIOS就会将这个引导扇区的代码加载到0x7c00中。
-
-汇编会从_start:开始执行
-
-```assembly
-
-	#include "os.h"
-
-	// 声明本地以下符号是全局的，在其它源文件中可以访问
-	.global _start
-
-	// 指定以下的代码生成16位的机器指令，这样才能在启动时的实模式下运行
-  	.code16
-
-	// 以下是代码区
- 	.text
-_start: 
-	jmp .
-	.org 0x1fe
-	.byte 0x55, 0xaa
-```
-
 
 
 ### x86处理器编程模型
@@ -216,57 +168,6 @@ qemu-img create -f raw /home/lyra/os/lyra-linux/image/disk1.img 100M
 
 创建一个名称为disk1的100M大小的虚拟磁盘文件。
 
-
-
-​	
-
-## 操作系统运行流程
-
-![image-20241103103004789](./assets/image-20241103103004789.png)
-
-boot: 读取磁盘后加载loader到内存中。
-
-loader: 操作系统的加载以及保护模式等的设置。
-
-kernel: 操作系统内核执行。
-
-
-
-## loader
-
-```assembly
-    #include "boot.h"
-    .code16
-    .text
-    .global _start
-    .extern boot_entry
-
-_start:
-    mov $0, %ax
-    mov %ax, %ds
-    mov %ax, %ss
-    mov %ax, %es
-    mov %ax, %fs
-    mov %ax, %gs
-    mov 0x7c00, %esp
-    ; 加载loader到0x8000地址中，之前执行0x8000没有办法设置寄存器的原因是没有被加载到内存中，所以一直在执行空指令，能设置寄存器才怪了
-    mov $0x8000, %bx
-    mov $0x2, %ah
-    mov $0x2, %cx
-    mov $64, %al
-    mov $0x0080, %dx
-    int $0x13
-
-    jmp boot_entry
-
-.section boot_end, "ax"
-boot_sig: .byte 0x55, 0xaa
-```
-
-
-
-
-
 ## 系统编译流程
 
 编译流程:
@@ -318,7 +219,6 @@ x86_64-linux-gnu-readelf -a boot.elf
 
 ```cmake
 # ----------------公共配置--------------------------------
-
 # cmake最低版本
 cmake_minimum_required(VERSION 3.28.3)
 
@@ -351,28 +251,333 @@ set(OBJCOPY_TOOL "x86_64-linux-gnu-objcopy")
 set(OBJDUMP_TOOL "x86_64-linux-gnu-objdump")
 # elf文件查看器，用户查看elf文件配置信息
 set(READELF_TOOL "x86_64-linux-gnu-readelf")
+
+include_directories(
+)
+
+# 底层的若干子项目：含内核及应用程序
+add_subdirectory(./boot)
+add_subdirectory(./loader)
 ```
 
 ### boot
 
 boot项目的配置信息，例如编译后的结果要加载到内存的什么位置，链接器的参数什么，要编译哪些文件等等。
 
+- ${CMAKE_SOURCE_DIR}：源文件根目录
+- ${CMAKE_BINARY_DIR}: 构建结果跟目录
+- 
+
 ```cmake
 # ------------------------------boot工程配置------------------------------------
+project(boot LANGUAGES C)
+
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/boot)
 
 # 设置链接器配置信息
 set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x7c00  --section-start boot_end=0x7dfe -o boot/boot.elf")
 
 # 设置要编译链接的文件列表
-file(GLOB C_LIST "boot/*.c" "boot/*.h")
-add_executable(${PROJECT_NAME} boot/start.s ${C_LIST})
+file(GLOB C_LIST "*.c" "*.h")
+add_executable(${PROJECT_NAME} start.s ${C_LIST})
 
 add_custom_command(TARGET ${PROJECT_NAME}
                    POST_BUILD
-                   COMMAND ${OBJCOPY_TOOL} -O binary boot/boot.elf ${CMAKE_SOURCE_DIR}/image/boot.bin
-                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 boot/boot.elf > boot/boot_dis.txt
-                   COMMAND ${READELF_TOOL} -a boot/boot.elf > boot/boot_elf.txt
+                   COMMAND ${OBJCOPY_TOOL} -O binary ${CMAKE_BINARY_DIR}/boot/boot.elf ${CMAKE_SOURCE_DIR}/image/boot.bin
+                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 ${CMAKE_BINARY_DIR}/boot/boot.elf > ${CMAKE_BINARY_DIR}/boot/boot_dis.txt
+                   COMMAND ${READELF_TOOL} -a ${CMAKE_BINARY_DIR}/boot/boot.elf > ${CMAKE_BINARY_DIR}/boot/boot_elf.txt
 )
 ```
+
+### loader
+
+将loader加载到0x8000内存中。
+
+```cmake
+project(loader LANGUAGES C)
+
+# ------------------------------loader工程配置------------------------------------
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/loader)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+
+
+# 设置链接器配置信息
+set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x8000  -o loader/loader.elf")
+
+# 设置要编译链接的文件列表
+file(GLOB C_LIST "*.c" "*.h" "${CMAKE_SOURCE_DIR}/common/*.h" "${CMAKE_SOURCE_DIR}/common/*.c")
+add_executable(${PROJECT_NAME} start.s ${C_LIST})
+
+include_directories(${CMAKE_SOURCE_DIR}/common)
+
+add_custom_command(TARGET loader
+                   POST_BUILD
+                   COMMAND ${OBJCOPY_TOOL} -O binary ${CMAKE_BINARY_DIR}/loader/loader.elf ${CMAKE_SOURCE_DIR}/image/loader.bin
+                   COMMAND ${OBJDUMP_TOOL} -x -d -S -m i8086 ${CMAKE_BINARY_DIR}/loader/loader.elf > ${CMAKE_BINARY_DIR}/loader/loader_dis.txt
+                   COMMAND ${READELF_TOOL} -a ${CMAKE_BINARY_DIR}/loader/loader.elf > ${CMAKE_BINARY_DIR}/loader/loader_elf.txt
+)
+```
+
+
+
+### vs code编译链配置
+
+#### 写文件脚本
+
+dd命令参数:
+
+- if: 输入的文件路径
+- of: 输出的文件路径
+- bs: 块大小
+- count: 读写块数
+- seek: 跳指定块数
+
+需要一个写入到磁盘映像的脚本，用于启动时将系统映像写入到磁盘中。脚本如下所示:
+
+```bash
+export PROJECT_HOME_PATH=/root/os/lyra-linux-os
+
+export DISK1_NAME=$PROJECT_HOME_PATH/image/disk1.img
+export BOOT_FILE_NAME=$PROJECT_HOME_PATH/image/boot.bin
+export LOADER_FILE_NAME=$PROJECT_HOME_PATH/image/loader.bin
+
+
+
+# 写boot区，定位到磁盘开头，写1个块：512字节
+dd if=$BOOT_FILE_NAME of=$DISK1_NAME bs=512 conv=notrunc count=1
+
+# 写loader区，定位到磁盘第2个块，写1个块：512字节
+dd if=$LOADER_FILE_NAME of=$DISK1_NAME bs=512 conv=notrunc seek=1
+
+```
+
+#### qemu启动
+
+需要有个脚本来启动qemu
+
+参数:
+
+- -daemonize: 后台运行qemu。
+
+- -m: 内存大小
+
+- -drive file=/,format=raw,index=0,media=disk, 磁盘映像文件路径以及磁盘映像格式IDE磁盘索引存储设备类型
+
+- -s: 开启gbd调试模式
+
+- -S: 启动虚拟机后暂停qemu的执行，等待gdb debug连接。
+
+- -d: 虚拟机日志输出级别
+
+  - `pcall`：记录 CPU 中断调用。
+
+  - `page`：记录页面映射的相关事件。
+
+  - `mmu`：记录内存管理单元（MMU）相关的事件。
+
+  - `cpu_reset`：记录 CPU 重置事件。
+
+  - `guest_errors`：记录虚拟机内核的错误信息。
+
+  - `trace:ps2_keyboard_set_translation`：记录 PS/2 键盘翻译设置的跟踪信息。
+
+    
+
+```bash
+export PROJECT_HOME_PATH=/root/os/lyra-linux-os
+
+qemu-system-i386 -daemonize -m 128M -drive file=$PROJECT_HOME_PATH/image/disk1.img,format=raw,index=0,media=disk -s -S -d pcall,page,mmu,cpu_reset,guest_errors,page,trace:ps2_keyboard_set_translation
+```
+
+#### tasks.json
+
+在tasks.json中配置可以在终端菜单中的运行任务中进行选择执行指定的任务，不用输入繁琐的命令。
+
+![image-20241122092924439](./assets/image-20241122092924439.png)
+
+![image-20241122093045218](./assets/image-20241122093045218.png)
+
+- ${workspaceFolder}: 当前项目目录
+- dependsOn: 执行调试准备前需要执行写镜像文件和启动qemu任务。
+- sequence: 按顺序执行任务。
+
+```json
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "写镜像文件",
+            "type": "shell",
+            "command": "bash ${workspaceFolder}/script/write-image.sh"
+        },
+        {
+            "label": "启动qemu",
+            "type": "shell",
+            "command": "bash ${workspaceFolder}/script/qemu-debug.sh"
+        },
+        {
+            "label": "调试准备",
+            "type": "shell",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "写镜像文件",
+                "启动qemu"
+            ]
+        },
+    ]
+}
+```
+
+launch.json
+
+用于配置debug调试环境配置信息
+
+```json
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // 配置名称
+            "name": "gdb debug",
+            // debug类型
+            "type": "cppdbg",
+            // 调试请求类型"launch"（启动调试）或 "attach"（附加到已运行的进程）
+            "request": "launch",
+            // 指定要调试的程序路径
+            "program": "${workspaceRoot}/build/boot/boot.elf",
+            // 工作目录
+            "cwd": "${workspaceRoot}",
+            // 外部控制台运行程序
+            "externalConsole": false,
+            // debug开始前是否需要暂停
+            "stopAtEntry": false,
+            // 调试器
+            "MIMode": "gdb",
+            // 调试器路径
+            "miDebuggerPath": "/usr/bin/gdb",
+            // gdb debug远程端口以及地址信息
+            "miDebuggerServerAddress": "127.0.0.1:1234",
+            // 远程机器架构
+            // "targetArchitecture": "x86"
+            // 链接器链接后停止
+            "stopAtConnect": true,
+            // GDB启动参数
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "将反汇编风格设置为 Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+            ],
+            "linux": {
+                "preLaunchTask": "调试准备", // 仅在windows下可自动运行
+                "miDebuggerPath": "gdb", // linux下的特殊配置
+            },
+            // 加载符号文件便于debug时展示汇编指令与c语言代码的映射关系
+            "postRemoteConnectCommands": [
+                {
+                    "description": "加载boot符号文件",
+                    "text": "-file-symbol-file ./build/boot/boot.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "加载loader符号文件",
+                    "text": "-file-symbol-file ./build/loader/loader.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "运行至0x7c00",
+                    "text": "-exec-until *0x7c00",
+                    "ignoreFailures": false
+                },
+            ]
+        }
+    ]
+}
+```
+
+## 操作系统
+
+### 系统执行流程
+
+1. BOOT: 加载loader程序。
+2. LOADER: 读取内存信息，设置系统配置，加载kernel程序。
+3. kernel: 执行我们的操作系统。
+
+![image-20241103103004789](./assets/image-20241103103004789.png)
+
+### BOOT
+
+计算机引导流程:
+
+- 通电
+
+  按下开机键，CPU会从ROM中读取BIOS系统并加载到内存中。
+
+- 执行BIOS程序
+
+  加载完成后会执行BIOS程序。
+
+- BIOS自检
+
+  在BIOS执行过程中会对计算机硬件进行自检避免运行出错
+
+- 运行引导代码
+
+  之后会读取硬盘扇区末尾为0x55aa的扇区并加载到内存0x7c00中，一个扇区大小为512字节。我们的操作系统512字节肯定是不够用的，所以我们需要利用这个512字节读取我们的操作系统并加载到内存中。
+
+- 进入操作系统
+
+  执行我们的操作系统的代码。
+
+![image-20241014212426778](./assets/image-20241014212426778.png)
+
+如下图所示，灰色部分表示我们可以正常使用的区域,0x400~0x7c00表示我们的栈区域。0x7c00-0x7e00表示我们的boot程序。
+
+![image-20241122100021054](./assets/image-20241122100021054.png)
+
+```assembly
+    #include "boot.h"
+    .code16
+    .text
+    .global _start
+    // 标识.extern才能调用c语言函数
+    .extern boot_entry
+
+_start:
+    // 初始化寄存器配置 将寄存器设置为0，并将栈底指针设置为0x7c00, 0x500-0x7c00表示我们的栈存储区域, 0x400-0x4ff是bios数据存储区
+    mov $0, %ax
+    mov %ax, %ds
+    mov %ax, %ss
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
+    mov $0x7c00, %esp
+
+    // 读取loader分区信息
+    mov $0x8000, %bx
+    mov $0x2, %ah
+    mov $0x2, %cx
+    mov $64, %al
+    mov $0x0080, %dx
+    int $0x13
+
+    jmp boot_entry
+
+.section boot_end, "ax"
+boot_sig: .byte 0x55, 0xaa
+```
+
+
 
