@@ -1,7 +1,5 @@
 #include "types.h"
 
-
-
 //  为了避免栈空间的浪费，内联函数会在在调用时将内联函数的函数体内容移动到调用的地方在进行编译
 static inline void cli(void)
 {
@@ -16,11 +14,20 @@ static inline void sti(void)
 }
 
 // 读端口
-static unit8_t inb(uint16_t port)
+static inline unit8_t inb(uint16_t port)
 {
     unit8_t rv;
 
     asm("inb %[p], %%al" : "=a"(rv) : [p] "d"(port));
+
+    return rv;
+}
+
+static inline uint16_t inw(uint16_t port)
+{
+    uint16_t rv;
+
+    asm("in %[p], %%ax" : "=a"(rv) : [p] "d"(port));
 
     return rv;
 }
@@ -48,7 +55,7 @@ static inline void lgdt(unint32_t start, uint16_t size)
 }
 
 // 读取cr0寄存器的值并返回
-static inline unint32_t read_cr0() 
+static inline unint32_t read_cr0()
 {
     unint32_t rv;
     asm("mov %%cr0, %%eax" : "=a"(rv));
@@ -63,7 +70,7 @@ static inline void write_cr0(unint32_t val)
 }
 
 // 地址跳转
-static inline void far_jump(unint32_t selector, unint32_t offset) 
+static inline void far_jump(unint32_t selector, unint32_t offset)
 {
     unint32_t addr[] = {offset, selector};
     asm("ljmpl *(%[a])" ::[a] "r"(addr));

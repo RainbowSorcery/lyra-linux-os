@@ -581,3 +581,16 @@ boot_sig: .byte 0x55, 0xaa
 
 
 
+ATA模式可以读取SATA硬盘和IDE硬盘
+硬盘接口分为 SATA、IDE、M.2，ATA模式可以读取SATA、IDE接口的硬盘，无法读取ATA模式的硬盘
+
+IDE接口有两个通道，一个主通道，一个从通道，每个通道都可以连接2块硬盘，2个通道可以连接4块硬盘。
+
+IDE接口如下所示:
+
+![IDE接口图片](https://bkimg.cdn.bcebos.com/pic/377adab44aed2e73929644b68701a18b87d6fa29?x-bce-process=image/format,f_auto/watermark,image_d2F0ZXIvYmFpa2UyNzI,g_7,xp_5,yp_5,P_20/resize,m_lfit,limit_1,h_1080)
+
+
+
+LBA48读取硬盘参考文档: https://wiki.osdev.org/ATA_PIO_Mode
+
