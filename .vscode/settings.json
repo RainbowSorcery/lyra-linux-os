@@ -3,6 +3,8 @@
         "loader_16.h": "c",
         "cpu_instr.h": "c",
         "boot_info.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "loader.h": "c",
+        "compare": "c"
     }
 }
