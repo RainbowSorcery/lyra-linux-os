@@ -61,7 +61,7 @@ void loader_kernel()
     ;
     read_disk(100, 500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
 
-    ((void (*)(void))SYSTEM_KERNEL_ADDRESS)();
+    ((void (*)(boot_info_t *))SYSTEM_KERNEL_ADDRESS)(&boot_info);
 
     ;
     for (;;)

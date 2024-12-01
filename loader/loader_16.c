@@ -1,13 +1,12 @@
 // 得放在最前面，语句后面的代码编译时都会生成16位字节码，如果将.code16gcc放在引入头文件后面，那么头文件的代码会被编译成32位字节码而不是16位字节码
 __asm__(".code16gcc");
 
-#include "../common/boot_info.h"
 #include "../common/types.h"
 #include "../common/cpu_instr.h"
 #include "loader_16.h"
 #include "loader.h"
 
-static boot_info_t boot_info;
+boot_info_t boot_info;
 
 static void show_msg(const char *msg)
 {
