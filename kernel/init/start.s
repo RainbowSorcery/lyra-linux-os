@@ -1,5 +1,3 @@
-
-
 .text
 .global _start
 .extern kernel_init

@@ -7,7 +7,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 
 
 # 设置链接器配置信息
-set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x100000 -o ${CMAKE_BINARY_DIR}/kernel/kernel.elf")
+set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -T ${CMAKE_SOURCE_DIR}/kernel/kernel.lds -o ${CMAKE_BINARY_DIR}/kernel/kernel.elf")
 
 # 设置要编译链接的文件列表 GLOB_RECURSE递归获取所有.c文件   
 file(GLOB_RECURSE C_LIST "*.c" "*.h" "${CMAKE_SOURCE_DIR}/common/*.h" "${CMAKE_SOURCE_DIR}/common/*.c")

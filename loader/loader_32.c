@@ -58,12 +58,10 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
 
 void loader_kernel()
 {
-    ;
     read_disk(100, 500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
 
     ((void (*)(boot_info_t *))SYSTEM_KERNEL_ADDRESS)(&boot_info);
 
-    ;
     for (;;)
     {
     }

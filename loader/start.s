@@ -3,6 +3,12 @@
 .global _start
 .extern loader_entry
 _start:
+
+    // 设置VGA显卡配置 16色模式
+    mov $0x03, %al 
+    mov $0x00, %ah
+    int $0x10
+
     jmp loader_entry
 
     .code32

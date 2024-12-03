@@ -582,7 +582,7 @@ boot_sig: .byte 0x55, 0xaa
 
 
 ATA模式可以读取SATA硬盘和IDE硬盘
-硬盘接口分为 SATA、IDE、M.2，ATA模式可以读取SATA、IDE接口的硬盘，无法读取ATA模式的硬盘
+硬盘接口分为 SATA、IDE、M.2，ATA模式可以读取SATA、IDE接口的硬盘，无法读取ATA模式的硬盘。
 
 IDE接口有两个通道，一个主通道，一个从通道，每个通道都可以连接2块硬盘，2个通道可以连接4块硬盘。
 
@@ -593,4 +593,122 @@ IDE接口如下所示:
 
 
 LBA48读取硬盘参考文档: https://wiki.osdev.org/ATA_PIO_Mode
+
+
+
+| 寄存器       | 端口  | 作用                                                         |
+| ------------ | ----- | ------------------------------------------------------------ |
+| device寄存器 | 0x1f6 | lba地址的前4位（占用device寄存器的低4位）<br/>主盘值为0（占用device寄存器的第5位）<br/>第6位值为1<br/>LBA模式为1，CHS模式为0（占用device寄存器的第7位）<br/>第8位值为1 |
+|              |       |                                                              |
+|              |       |                                                              |
+
+
+
+```c
+/*
+ LBA48，最高可以读取48位256TB，读取磁盘
+ sector: 开始扇区
+ selctor_count: 读扇区数
+ buffer: 保存缓冲区地址
+*/
+static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
+{
+    // 设置硬盘读取位置 具体查看0x1f6寄存器位配置表
+    outb(0x1f6, 0xe0);
+    // 设置读取扇区数量高8字节
+    outb(0x1f2, selctor_count >> 8);
+    /*
+        LBA48扇区读写位
+        LBA4  24-31
+        LBA5  32 - 39
+        LBA6 40 - 47
+        LBA1 0-7
+        LBA2 8-15
+        LBA3 16-23
+    */
+    unit8_t lba4 = (sector >> 24) & 0xff;
+    // 函数的传参只有32位，所有lba5和lba6都是0
+    unit8_t lba5 = 0;
+    unit8_t lba6 = 0;
+    ;
+    unit8_t lba1 = sector & 0xff;
+    unit8_t lba2 = (sector >> 8) & 0xff;
+    unit8_t lba3 = (sector >> 16) & 0xff;
+
+    outb(0x1f3, lba4);
+    outb(0x1f4, lba5);
+    outb(0x1f5, lba6);
+
+    // 读取扇区低8位
+    outb(0x1f2, selctor_count & 0xff);
+    outb(0x1f3, lba1);
+    outb(0x1f4, lba2);
+    outb(0x1f5, lba3);
+
+    outb(0x1f7, 0x24);
+
+    uint16_t *data_buffer = (uint16_t *)buffer;
+    while (selctor_count--)
+    {
+        // 判断硬盘是否在忙，如果在忙则阻塞等待
+        while ((inb(0x1f7) & 0x88) != 0x8)
+        {
+        }
+
+        for (int i = 0; i < SECTOR_SIZE / 2; i++)
+        {
+            *data_buffer++ = inw(0x1f0);
+        }
+    }
+}
+
+```
+
+
+
+
+
+
+
+### elf文件
+
+```txt
+  [ 1] .text             PROGBITS        00008000 001000 00053d 00  AX  0   0  1
+  [ 2] .rodata           PROGBITS        00009000 002000 00004c 00   A  0   0  1
+  [ 3] .data             PROGBITS        0000a04c 00204c 000018 00  WA  0   0  4
+  [ 4] .bss              NOBITS          0000a080 002064 000054 00  WA  0   0 32
+```
+
+.text: 放置代码和指令信息。
+
+.rodata: 放置常量数据以及字符串信息。
+
+.data: 存储全局变量、初始化的数据和静态的变量。
+
+.bss: 存储未初始化的数据。
+
+stack: 存储局部变量
+
+``` lds
+SECTIONS {
+    . = 0x100000; /*设置段起始地址*/
+    .text : {
+        *(.text)
+    }
+    
+    .rodata : {
+        *(.rodata)
+    }
+    
+    .data : {
+        *(.data)
+    }
+    .bss : {
+        *(.bss)
+    }
+
+}
+```
+
+### GDT
 

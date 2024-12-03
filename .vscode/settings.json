@@ -5,6 +5,7 @@
         "boot_info.h": "c",
         "types.h": "c",
         "loader.h": "c",
-        "compare": "c"
+        "compare": "c",
+        "init.h": "c"
     }
 }

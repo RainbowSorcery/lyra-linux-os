@@ -1,2 +1,3 @@
 build/
 image/**.bin
+script/**.sh
