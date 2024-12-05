@@ -21,7 +21,7 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
         LBA3 16-23
     */
     unit8_t lba4 = (sector >> 24) & 0xff;
-    // 函数的传参只有32位，所有lba5和lba6都是0
+    // LBA48支持48位长度的扇区读，我们函数的传参只有32位，lba5和lba6没用到，所以直接设置为0。
     unit8_t lba5 = 0;
     unit8_t lba6 = 0;
     ;
