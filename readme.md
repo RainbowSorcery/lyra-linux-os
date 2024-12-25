@@ -515,12 +515,12 @@ launch.json
 asm [ volatile ] (  
          assembler template                    /* 汇编语句 */
          [ : output operands ]                /* 输出操作数 */
-         [ : input operands  ]                /* 输出操作数 */
-         [ : list of clobbered registers ]    /* 发生修改的寄存器列表 */
+         [ : input operands  ]                /* 输入操作数 */
+         [ : list of clobbered registers ]    /* 修改列表，汇编代码对哪些寄存器或内存发生了改变，便于GCC根据行为生成正确的汇编代码 */
          );
 ```
 
-方括号中的内容表示可选项。
+输入输出的内容表示可选项。
 
 | 字母       | 含义                                             |
 | ---------- | ------------------------------------------------ |
@@ -534,11 +534,24 @@ asm [ volatile ] (
 | S, D       | 寄存器esi或edi                                   |
 | I          | 常数（0～31）                                    |
 
+如下例子所示，将调用0x15号中断，在输出语句中定义了将eax的值保存到signature变量中，将ebx的值保存到contId变量中，将ecx的值保存到bytes变量中，并在输入语句中定义了，将eax的值设置成0xe820，将ecx的值设置成24，将ebx的值设置成contId，将edx的值设置成的值设置成0x534d4150，将edx的值设置成point_entry指针，最后该指令会对内存进行修改。
+
 ```c
-        e820_entry *point_entry = &entry;
-        asm("int $0x15" : "=a"(signature), "=b"(contId), "=c"(bytes)
-            : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
-            : "memory");
+asm("int $0x15" : "=a"(signature), "=b"(contId), "=c"(bytes)
+     : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
+     : "memory");
+```
+
+如下例子所示 ，该汇编语言没有输出，在汇编指令中*(%[a])表示间接寻址，读取eax寄存器存储的数据作为地址，来进行ljmpl远跳，在设置输入参数时[a] "r"(addr)，会将addr变量的地址传入到eax寄存器中。
+
+```c
+ asm("ljmpl *(%[a])" ::[a] "r"(addr));
+```
+
+如果指令使用了寄存器的话，必须得多加个%号，避免与Intel汇编命名冲突，如下所示:
+
+```c
+asm("mov %%cr0, %%eax" : "=a"(rv));
 ```
 
 
