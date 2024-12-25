@@ -507,6 +507,44 @@ launch.json
 }
 ```
 
+## GCC内联汇编
+
+基本语法格式如下所示:
+
+```c
+asm [ volatile ] (  
+         assembler template                    /* 汇编语句 */
+         [ : output operands ]                /* 输出操作数 */
+         [ : input operands  ]                /* 输出操作数 */
+         [ : list of clobbered registers ]    /* 发生修改的寄存器列表 */
+         );
+```
+
+方括号中的内容表示可选项。
+
+| 字母       | 含义                                             |
+| ---------- | ------------------------------------------------ |
+| m, v, o    | 内存单元                                         |
+| R          | 任何通用寄存器                                   |
+| Q          | 寄存器eax, ebx, ecx,edx之一                      |
+| I, h       | 直接操作数                                       |
+| E, F       | 浮点数                                           |
+| G          | 任意                                             |
+| a, b, c, d | 寄存器eax/ax/al, ebx/bx/bl, ecx/cx/cl或edx/dx/dl |
+| S, D       | 寄存器esi或edi                                   |
+| I          | 常数（0～31）                                    |
+
+```c
+        e820_entry *point_entry = &entry;
+        asm("int $0x15" : "=a"(signature), "=b"(contId), "=c"(bytes)
+            : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
+            : "memory");
+```
+
+
+
+
+
 ## 操作系统
 
 ### 系统执行流程
@@ -585,8 +623,18 @@ boot_sig: .byte 0x55, 0xaa
 
 loader模块需要完成以下几个功能:
 
+- 获取硬件基本信息
+
 - 进入保护模式
 - 加载kernel到内存中
+
+
+
+#### 检测内存容量
+
+
+
+
 
 #### 保护模式
 
