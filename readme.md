@@ -507,6 +507,57 @@ launch.json
 }
 ```
 
+## GCC内联汇编
+
+基本语法格式如下所示:
+
+```c
+asm [ volatile ] (  
+         assembler template                    /* 汇编语句 */
+         [ : output operands ]                /* 输出操作数 */
+         [ : input operands  ]                /* 输入操作数 */
+         [ : list of clobbered registers ]    /* 修改列表，汇编代码对哪些寄存器或内存发生了改变，便于GCC根据行为生成正确的汇编代码 */
+         );
+```
+
+输入输出的内容表示可选项。
+
+| 字母       | 含义                                             |
+| ---------- | ------------------------------------------------ |
+| m, v, o    | 内存单元                                         |
+| R          | 任何通用寄存器                                   |
+| Q          | 寄存器eax, ebx, ecx,edx之一                      |
+| I, h       | 直接操作数                                       |
+| E, F       | 浮点数                                           |
+| G          | 任意                                             |
+| a, b, c, d | 寄存器eax/ax/al, ebx/bx/bl, ecx/cx/cl或edx/dx/dl |
+| S, D       | 寄存器esi或edi                                   |
+| I          | 常数（0～31）                                    |
+
+如下例子所示，将调用0x15号中断，在输出语句中定义了将eax的值保存到signature变量中，将ebx的值保存到contId变量中，将ecx的值保存到bytes变量中，并在输入语句中定义了，将eax的值设置成0xe820，将ecx的值设置成24，将ebx的值设置成contId，将edx的值设置成的值设置成0x534d4150，将edx的值设置成point_entry指针，最后该指令会对内存进行修改。
+
+```c
+asm("int $0x15" : "=a"(signature), "=b"(contId), "=c"(bytes)
+     : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
+     : "memory");
+```
+
+如下例子所示 ，该汇编语言没有输出，在汇编指令中*(%[a])表示间接寻址，读取eax寄存器存储的数据作为地址，来进行ljmpl远跳，在设置输入参数时[a] "r"(addr)，会将addr变量的地址传入到eax寄存器中。
+
+```c
+ asm("ljmpl *(%[a])" ::[a] "r"(addr));
+```
+
+如果指令使用了寄存器的话，必须得多加个%号，避免与Intel汇编命名冲突，如下所示:
+
+```c
+asm("mov %%cr0, %%eax" : "=a"(rv));
+```
+
+
+
+
+
 ## 操作系统
 
 ### 系统执行流程
@@ -585,6 +636,8 @@ boot_sig: .byte 0x55, 0xaa
 
 loader模块需要完成以下几个功能:
 
+- 获取硬件基本信息
+
 - 初始化系统配置
 - 进入保护模式
 - 加载kernel到内存中
@@ -599,9 +652,7 @@ loader模块需要完成以下几个功能:
 
 检测内存使用的是0x15号中断 0xe820功能号，e820目前是唯一一种方式可以检测到4G以上内存信息的方法。
 
-
-
-首先我们需要定义一个结构体用于存储内存配置信息
+首先我们需要定义一个结构体用于存储内存配置信息，e820_entry结构体中定义了e820读取内存信息后写入内存的结构。
 
 ```c
 typedef struct e820_entry
@@ -610,7 +661,7 @@ typedef struct e820_entry
     unint32_t base_addr_h; // 基地址，表示该内存区域的起始地址
     unint32_t length_l;    // 长度，表示该内存区域的大小
     unint32_t length_h;    // 长度，表示该内存区域的大小
-    unint32_t type;        // 类型，表示该内存区域的用途或类型
+    unint32_t type;        // 类型，表示该内存区域的用途或类型 0x01表示可用内存 0x02表示保留区域 0x03表示ACPI保留内存区域,0x04表示不可用内存区域
     unint32_t acpi;        // ACPI扩展字段（可选）
 } e820_entry;
 
@@ -623,7 +674,7 @@ typedef struct boot_info_t
 {
     struct
     {
-        unint32_t start;xv
+        unint32_t start;
         unint32_t size;
     } ram_regin_confg[BOOT_RAM_REGION_MAX];
 
@@ -632,9 +683,31 @@ typedef struct boot_info_t
 
 ```
 
+int 0x15 e820具体指令格式如下所示:
 
+输入:
 
+eax: 0xe820 功能码 
 
+ebx: 内存执行区域，第一次调用时等于0。
+
+es : di: 将e820_entry结果写入内存区域处
+
+ecx: e820_entry结构体大小，通常是无效的，无论设置成什么BIOS 始终会填充20个字节的entry信息。
+
+edx: 传入字符串 `'SMAP'`（ASCII 码：53 4D 41 50），用于验证支持性。
+
+输出:
+
+CF: 无错误0 有错误1
+
+eax: 字符串 `'SMAP'`（ASCII 码：53 4D 41 50），用于验证支持性。
+
+ebx: 执行下一个内存区域，当输出等于0时表示内存 读取完成。
+
+es : di: 将e820_entry结果写入内存区域处
+
+ecx: 读取entry长度数。
 
 ```c
 static void detect_memory(void)
@@ -655,18 +728,20 @@ static void detect_memory(void)
             : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
             : "memory");
 
+        // 如果signature不等于0x534D4150那么表示计算机硬件不支持e820方式读取内存信息
         if (signature != 0x534D4150)
         {
             show_msg("signature error");
             break;
         }
 
+        //  acpi校验 osdev也没有写为什么要加这个代码，具体作用也不知道是做什么的
         if (bytes > 20 && (point_entry->acpi & 0x0001) == 0)
         {
             continue;
         }
 
-        // 保存内存信息到结构体中
+        // type等于1表示可用内存 保存可以内存信息到结构体中
         if (point_entry->type == 1)
         {
             boot_info.ram_regin_confg[boot_info.ram_region_count].start = entry.base_addr_l;
@@ -683,16 +758,9 @@ static void detect_memory(void)
 
     show_msg("memeory read done.");
 }
-
 ```
 
-
-
-
-
 #### 保护模式
-
-
 
 #### 加载kernel
 

@@ -69,18 +69,20 @@ static void detect_memory(void)
             : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
             : "memory");
 
+        // 如果signature不等于0x534D4150那么表示计算机硬件不支持e820方式读取内存信息
         if (signature != 0x534D4150)
         {
             show_msg("signature error");
             break;
         }
 
+        //  acpi校验 osdev也没有写为什么要加这个代码，具体作用也不知道是做什么的
         if (bytes > 20 && (point_entry->acpi & 0x0001) == 0)
         {
             continue;
         }
 
-        // 保存内存信息到结构体中
+        // type等于1表示可用内存 保存可以内存信息到结构体中
         if (point_entry->type == 1)
         {
             boot_info.ram_regin_confg[boot_info.ram_region_count].start = entry.base_addr_l;
