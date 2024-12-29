@@ -17,7 +17,7 @@ include_directories(${CMAKE_SOURCE_DIR}/common)
 
 add_custom_command(TARGET kernel
                    POST_BUILD
-                   COMMAND ${OBJCOPY_TOOL} -O binary ${CMAKE_BINARY_DIR}/kernel/kernel.elf ${CMAKE_SOURCE_DIR}/image/kernel.bin
+                   COMMAND ${OBJCOPY_TOOL} -S  ${CMAKE_BINARY_DIR}/kernel/kernel.elf ${CMAKE_SOURCE_DIR}/image/kernel.elf
                    COMMAND ${OBJDUMP_TOOL} -x -d -S -m i386 ${CMAKE_BINARY_DIR}/kernel/kernel.elf > ${CMAKE_BINARY_DIR}/kernel/kernel_dis.txt
                    COMMAND ${READELF_TOOL} -a ${CMAKE_BINARY_DIR}/kernel/kernel.elf > ${CMAKE_BINARY_DIR}/kernel/kernel_elf.txt
 )

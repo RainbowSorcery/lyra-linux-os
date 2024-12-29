@@ -585,8 +585,110 @@ boot_sig: .byte 0x55, 0xaa
 
 loader模块需要完成以下几个功能:
 
+- 初始化系统配置
 - 进入保护模式
 - 加载kernel到内存中
+
+
+
+#### 初始化系统配置
+
+##### 内存检查
+
+参考文档: `https://wiki.osdev.org/Detecting_Memory_(x86)`
+
+检测内存使用的是0x15号中断 0xe820功能号，e820目前是唯一一种方式可以检测到4G以上内存信息的方法。
+
+
+
+首先我们需要定义一个结构体用于存储内存配置信息
+
+```c
+typedef struct e820_entry
+{
+    unint32_t base_addr_l; // 基地址，表示该内存区域的起始地址
+    unint32_t base_addr_h; // 基地址，表示该内存区域的起始地址
+    unint32_t length_l;    // 长度，表示该内存区域的大小
+    unint32_t length_h;    // 长度，表示该内存区域的大小
+    unint32_t type;        // 类型，表示该内存区域的用途或类型
+    unint32_t acpi;        // ACPI扩展字段（可选）
+} e820_entry;
+
+#include "types.h"
+
+#define BOOT_RAM_REGION_MAX 10
+
+// 内存信息结构体
+typedef struct boot_info_t
+{
+    struct
+    {
+        unint32_t start;xv
+        unint32_t size;
+    } ram_regin_confg[BOOT_RAM_REGION_MAX];
+
+    int ram_region_count;
+} boot_info_t;
+
+```
+
+
+
+
+
+```c
+static void detect_memory(void)
+{
+    e820_entry entry;
+
+    show_msg("try to detect memory:");
+    boot_info.ram_region_count = 0;
+
+    int contId = 0;
+    int signature = 0;
+    int bytes = 0;
+
+    for (int i = 0; i < BOOT_RAM_REGION_MAX; i++)
+    {
+        e820_entry *point_entry = &entry;
+        asm("int $0x15" : "=a"(signature), "=b"(contId), "=c"(bytes)
+            : "a"(0xe820), "c"(24), "b"(contId), "d"(0x534d4150), "D"(point_entry)
+            : "memory");
+
+        if (signature != 0x534D4150)
+        {
+            show_msg("signature error");
+            break;
+        }
+
+        if (bytes > 20 && (point_entry->acpi & 0x0001) == 0)
+        {
+            continue;
+        }
+
+        // 保存内存信息到结构体中
+        if (point_entry->type == 1)
+        {
+            boot_info.ram_regin_confg[boot_info.ram_region_count].start = entry.base_addr_l;
+            boot_info.ram_regin_confg[boot_info.ram_region_count].size = entry.length_l;
+            boot_info.ram_region_count++;
+        }
+
+        // contId = 0表示内存读取完毕
+        if (contId == 0)
+        {
+            break;
+        }
+    }
+
+    show_msg("memeory read done.");
+}
+
+```
+
+
+
+
 
 #### 保护模式
 

@@ -1,0 +1,2 @@
+
+#define GDT_TABLE

@@ -9,6 +9,10 @@ _start:
     mov $0x00, %ah
     int $0x10
 
+    mov $0x13, %al
+    mov $0x00, %ah
+    int $0x10
+
     jmp loader_entry
 
     .code32
