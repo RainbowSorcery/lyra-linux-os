@@ -49,7 +49,7 @@ static inline void lgdt(unint32_t start, uint16_t size)
 
     gdt.statt_h = start >> 16;
     gdt.start_l = start & 0xffff;
-    gdt.limit = size;
+    gdt.limit = size - 1;
 
     asm("lgdt %[g]" ::[g] "m"(gdt));
 }

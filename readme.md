@@ -760,7 +760,87 @@ static void detect_memory(void)
 }
 ```
 
+跑一下程序，等待内存读取完成后查看一下boot_info中是否可以正常的读取到内存信息，我们的qemu设置的字节大小是128M，133038080刚好等于127.34，应该是抛去了不可用的内存信息:
+
+![image-20241230001459478](./assets/image-20241230001459478.png)
+
 #### 保护模式
+
+保护模式的流程如下所示:
+
+- 关中断，在切换保护模式时进制有其他中断打断。
+- 开启A20地址线，使计算机可以访问32位地址。
+- 加载GDT表项
+- 设置cr0以启用保护模式
+- 远眺清空实模式流水线
+
+##### 关中断
+
+关中断倒是挺简单，指定cli命令就可以关中断，使用内联汇编即可。
+
+```assembly
+static inline void cli(void)
+{
+    // 关中断
+    asm("cli");
+}
+```
+
+##### 设置A20地址线
+
+设置地址线也挺简单的，将0x92端口的第二位设置成1即可。
+
+```c
+ 
+// 开启A20地址线 读取端口信息后将第二位设置成1并写回到端口中
+    uint16_t port = (uint16_t)0x92;
+    unit8_t value = inb(port);
+    outb(0x92, (value | 0x2));
+```
+
+##### 加载GDT表项
+
+这一部分就比较复杂了，GDT的各种配置项，基地址，这里先不设计GDT的配置，后面有章节会将具体的GDT应该要怎么配置。
+
+首先定义一下GDT表现信息:
+
+```c
+uint16_t gdt_table[][4] = {
+    {0, 0, 0, 0},
+    {0xffff, 0x0000, 0x9a00, 0x00cf},
+    {0xffff, 0x0000, 0x9200, 0x00cf}};
+
+```
+
+然后使用lgdt加载表项信息
+
+lgdt总共48位，其中limit有16位，代表GDT表项数，剩余32位则是GDT段基址。
+
+```
+static inline void lgdt(unint32_t start, uint16_t size)
+{
+    struct
+    {
+        uint16_t limit;
+        uint16_t start_l;
+        uint16_t statt_h;
+    } gdt;
+
+    gdt.statt_h = start >> 16;
+    gdt.start_l = start & 0xffff;
+    gdt.limit = size;
+
+    asm("lgdt %[g]" ::[g] "m"(gdt));
+}
+```
+
+```c
+    lgdt((unint32_t)gdt_table, sizeof(gdt_table));
+```
+
+
+
+
 
 #### 加载kernel
 

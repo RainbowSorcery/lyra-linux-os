@@ -35,7 +35,7 @@ uint16_t gdt_table[][4] = {
 static void enter_protect_mode(void)
 {
     cli();
-    // 开启A2地址线
+    // 开启A20地址线
     uint16_t port = (uint16_t)0x92;
     unit8_t value = inb(port);
     outb(0x92, (value | 0x2));
@@ -97,7 +97,7 @@ static void detect_memory(void)
         }
     }
 
-    show_msg("memeory read done.");
+        show_msg("memeory read done.");
 }
 
 void loader_entry()
