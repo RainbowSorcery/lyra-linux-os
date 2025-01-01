@@ -776,6 +776,8 @@ static void detect_memory(void)
 
 ##### 关中断
 
+首先得将关中断打开，避免在切换保护模式的时候被其他程序打断，最后出现不可预料的后果。
+
 关中断倒是挺简单，指定cli命令就可以关中断，使用内联汇编即可。
 
 ```assembly
@@ -787,6 +789,8 @@ static inline void cli(void)
 ```
 
 ##### 设置A20地址线
+
+在8086处理器中，最大访存空间为1M，只有打开A20地址线才能访问1M以上的内存空间。
 
 设置地址线也挺简单的，将0x92端口的第二位设置成1即可。
 
@@ -838,7 +842,54 @@ static inline void lgdt(unint32_t start, uint16_t size)
     lgdt((unint32_t)gdt_table, sizeof(gdt_table));
 ```
 
+在gdt结构体中使用两个uint16_t而不是一个unint32_t的原因是，unint32_t使用的是typedef unsigned long unint32_t;根据操作系统的不同unsigned long 如果是在32位系统上占用的是4字节，而在64位系统中使用的是8字节，而gdtr长度是6个字节，如果unsigned long占用8个字节的话，那么在加载gdt表时会出错。
 
+##### 设置CR0寄存器
+
+打开CR0表示操作系统已经进入到保护模式中。
+
+和A20地址线类似，读取到cr0寄存器后将第一位设置成1再写回即可。
+
+```c
+static inline unint32_t read_cr0()
+{
+    unint32_t rv;
+    asm("mov %%cr0, %%eax" : "=a"(rv));
+
+    return rv;
+}
+```
+
+```c
+    // 设置cr0
+    unint32_t cr0 = read_cr0();
+    cr0 = cr0 | 0x1;
+    write_cr0(cr0);
+```
+
+##### 远跳1M以上内存,清空流水线
+
+远跳需要设置段选择子，这里也没有详细讲到，等后面章节将保护模式中会有讲解。
+
+```c
+// 地址跳转
+static inline void far_jump(unint32_t selector, unint32_t offset)
+{
+    unint32_t addr[] = {offset, selector};
+    asm("ljmpl *(%[a])" ::[a] "r"(addr));
+}
+```
+
+```c
+    // 0x08 是代码段选择子 远跳转清空流水线
+    far_jump((unint32_t)8, (unint32_t)protected_mode_entry);
+```
+
+protected_mode_entry在start.s汇编语言源文件中有定义，.code32表示将后面的预计内容编译成32位的机器码，然后使用  .global protected_mode_entry将该函数进行导出便于在c语言文件中进行使用。
+
+![image-20250101195438022](./assets/image-20250101195438022.png)
+
+![image-20250101195627988](./assets/image-20250101195627988.png)
 
 
 
@@ -955,9 +1006,76 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
 
 ```
 
+#### 向内核传递启动信息
 
+向内核传递信息有两中方式：
 
+1. 直接将启动信息写入到固定内存中，然后kernel直接读固定位置内存即可，缺点是如果内存发生改变了，那么整个项目都得统一修改。
+2. 函数传参，将启动信息以函数传参的方式传递到kernel内核中。
 
+我们使用的是第二种方式，第二种方式需要了解x86函数调用的原理。
+
+```c
+void a(int a, int b)
+{
+    int c = a + b;
+}
+
+void loader_entry()
+{
+    a(20, 12);
+}
+
+```
+
+例如上述代码中将20和12参数传入到函数a中，查看汇编语言如下所示:
+
+在进行函数调用时，先将两个参数20和12压入到栈中，0xc是12，0x14是20，然后再利用call指令调用函数体，如下所示:
+
+![image-20250101205955623](./assets/image-20250101205955623.png)
+
+进入函数体中，先将栈顶指针保存一下，便于函数调用后进行恢复到之前的执行的语句中push ebp的作用就是这个作用，之后将栈顶指针设置到栈基址指针ebp中
+
+![image-20250101210200982](./assets/image-20250101210200982.png)
+
+之后将esp减10以便于获取传入参数信息，因为12是4位，20是6位，共十位，之后利用栈顶指针加指定偏移就能获取到传入的参数了，0x8是8位，0x0c是16位。
+
+![image-20250101211956635](./assets/image-20250101211956635.png)
+
+我们可以模仿以上流程将loader中的传参以c语言的方式传入到函数中，再传到kernel的汇编语言中，然后再由kernel的start.s的汇编语言中，再由start.s压栈传入到kernel.c函数中。
+
+首先在loader中将boot_info进行传参。
+
+```c
+    ((void (*)(boot_info_t *))0x100000)(&boot_info);
+```
+
+在start.s中将loader传入的参数出栈并将地址信息保存到eax寄存器中
+
+```assembly
+.text
+.global _start
+.extern kernel_init
+_start:
+    // 模拟函数调用, 先将loader传入的值获取到保存到eax中, 再将eax压到栈中便于kernel_init函数获取到
+    // 具体原理查看gcc c语言汇编调用原理
+    push %ebp
+    mov %ebp, %esp
+    mov -0x18(%esp), %eax
+    
+```
+
+之后再将eax压栈，便于函数获取到寄存器的值
+
+```c
+    // 压栈 由kernel_init出栈获取到参数
+    push %eax
+    call kernel_init
+```
+
+这样一来在kernel.c中就能获取到start.s中传过来的参数了
+
+![image-20250101212953386](./assets/image-20250101212953386.png)
 
 ### elf文件
 

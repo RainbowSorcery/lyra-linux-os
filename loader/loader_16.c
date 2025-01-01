@@ -96,7 +96,7 @@ static void detect_memory(void)
         }
     }
 
-        show_msg("memeory read done.");
+    show_msg("memeory read done.");
 }
 
 void loader_entry()
