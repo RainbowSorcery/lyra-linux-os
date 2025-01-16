@@ -1,0 +1,1 @@
+#define GDT_TABLE_SIZE 256

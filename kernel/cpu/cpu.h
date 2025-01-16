@@ -1,0 +1,2 @@
+
+void cpu_init();
