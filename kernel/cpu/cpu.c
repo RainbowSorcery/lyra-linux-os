@@ -10,6 +10,14 @@ static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t attr)
 {
     // selector表示偏移量 从gdt表开始到偏移的字节数 传参传进来的是*8，我们只需要gdt_table的下标数所有需要除8
+
+    // 判断limit是否超过了20位，那么将G标志位设置成1表述以4KB为单位
+    if (limit > 0xfffff)
+    {
+        limit = limit / 0x1000;
+        attr = attr | SEG_G;
+    }
+
     segment_desc_t *desc = gdt_table + (selector >> 3);
     desc->limit_0_15 = limit & 0xffff;
     desc->base_0_15 = base & 0xffff;
