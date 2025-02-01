@@ -1,9 +1,9 @@
 
 #define GDT_TABLE
 
-#include "../include/cpu.h"
 #include "../include/os_cfg.h"
-#include "cpu.h"
+#include "../include/cpu.h"
+#include "../common/cpu_instr.h"
 
 static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 
@@ -34,6 +34,10 @@ void init_gdt()
         // gdt每个表项占8字节 左移三位表示偏移量乘8
         segement_desc_set(i << 3, 0, 0, 0);
     }
+
+    segement_desc_set(KENEL_SECTION_DS, 0, 0Xffffff, SEG_P | SEG_DPL0 | SEG_S_NORMAL | SEG_TYPE_DATA | SEG_TYPE_RW | SEG_D);
+    segement_desc_set(KENEL_SECTION_CS, 0, 0Xffffff, SEG_P | SEG_DPL0 | SEG_S_NORMAL | SEG_TYPE_CODE | SEG_TYPE_RW | SEG_D);
+    lgdt((unint32_t)gdt_table, sizeof(gdt_table));
 }
 
 void cpu_init()

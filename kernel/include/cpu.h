@@ -28,3 +28,8 @@ typedef struct _segment_desc_t
 #define SEG_TYPE_DATA (0 << 3)
 
 #define SEG_TYPE_RW (1 << 1)
+
+#define KENEL_SECTION_DS (1 * 8)
+#define KENEL_SECTION_CS (2 * 8)
+
+void cpu_init();

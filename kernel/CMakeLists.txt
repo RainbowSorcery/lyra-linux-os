@@ -10,7 +10,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_C_LINK_EXECUTABLE "${LINKER_TOOL} <OBJECTS> -m elf_i386  -Ttext=0x100000 -o ${CMAKE_BINARY_DIR}/kernel/kernel.elf")
 
 # 设置要编译链接的文件列表 GLOB_RECURSE递归获取所有.c文件   
-file(GLOB_RECURSE C_LIST "*.c" "*.h" "${CMAKE_SOURCE_DIR}/common/*.h" "${CMAKE_SOURCE_DIR}/common/*.c")
+file(GLOB_RECURSE C_LIST "*.c" "*.h" "init/*.c" "init/*.h" "include/*.c" "include/*.h" "cpu/*.c" "cpu/*.h" "${CMAKE_SOURCE_DIR}/common/*.h" "${CMAKE_SOURCE_DIR}/common/*.c")
 add_executable(${PROJECT_NAME} init/start.s ${C_LIST})
 
 include_directories(${CMAKE_SOURCE_DIR}/common)
