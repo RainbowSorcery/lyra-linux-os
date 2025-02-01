@@ -1,3 +1,6 @@
+#ifndef CPU_INSTR_H
+#define CPU_INSTR_H
+
 #include "types.h"
 
 //  为了避免栈空间的浪费，内联函数会在在调用时将内联函数的函数体内容移动到调用的地方在进行编译
@@ -75,3 +78,22 @@ static inline void far_jump(unint32_t selector, unint32_t offset)
     unint32_t addr[] = {offset, selector};
     asm("ljmpl *(%[a])" ::[a] "r"(addr));
 }
+
+// 加载中断描述符
+static inline void lidt(unint32_t start, uint16_t size)
+{
+    struct
+    {
+        uint16_t limit;
+        uint16_t start_l;
+        uint16_t statt_h;
+    } idt;
+
+    idt.statt_h = start >> 16;
+    idt.start_l = start & 0xffff;
+    idt.limit = size - 1;
+
+    asm("lidt %[g]" ::[g] "m"(idt));
+}
+
+#endif // CPU_INSTR_H

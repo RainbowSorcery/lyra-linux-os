@@ -4,6 +4,7 @@
 #include "../include/os_cfg.h"
 #include "../include/cpu.h"
 #include "../common/cpu_instr.h"
+#include "irq.c"
 
 static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 
@@ -43,4 +44,5 @@ void init_gdt()
 void cpu_init()
 {
     init_gdt();
+    irq_init();
 }

@@ -1,3 +1,6 @@
+#ifndef CPU_H
+#define CPU_H
+
 #include "../common/types.h"
 
 // 禁止在结构体中填充东西
@@ -11,6 +14,15 @@ typedef struct _segment_desc_t
     uint16_t attr;
     unit8_t base_24_31;
 } segment_desc_t;
+
+typedef struct _gate_desc_t
+{
+    uint16_t offset_0_15;
+    uint16_t selector;
+    uint16_t attr;
+    uint16_t offset_16_31;
+
+} gate_desc_t;
 
 #pragma pack()
 
@@ -33,3 +45,5 @@ typedef struct _segment_desc_t
 #define KENEL_SECTION_CS (2 * 8)
 
 void cpu_init();
+
+#endif // CPU_H
