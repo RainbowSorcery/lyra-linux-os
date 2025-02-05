@@ -14,9 +14,10 @@ _start:
     // 压栈 由kernel_init出栈获取到参数
     push %eax
     call kernel_init
+    jmp $8, $gdt_reload
 
 gdt_reload:
-    mov $8, %ax
+    mov $16, %ax
     mov %ax, %ds
     mov %ax, %ss
     mov %ax, %es
@@ -28,3 +29,82 @@ gdt_reload:
 
     .bss
 .comm stack, 8*1024
+    
+.macro exception_handler name num with_error_code
+    .text
+    .extern do_handler_\name
+    .global exception_handler_\name
+    exception_handler_\name:
+        .if \with_error_code == 0
+            push $0
+        .endif
+        push $\num
+        pusha
+        push %ds
+        push %es
+        push %fs
+        push %gs
+
+        push %esp
+        call do_handler_\name
+        add $(1*4), %esp
+
+        pop %gs
+        pop %fs
+        pop %es
+        pop %ds
+        popa
+        // 将\num和error_code弹栈
+        add $(2*4), %esp
+        iret
+.endm
+// 内置异常
+exception_handler unknown -1, 0
+exception_handler divide 0, 0
+exception_handler debug 1, 0
+exception_handler nmi 2, 0
+exception_handler breakpoint 3, 0
+exception_handler overflow 4, 0
+exception_handler bound_range 5, 0
+exception_handler invalid_opcode 6, 0
+exception_handler device_not_available 7, 0
+exception_handler double_fault 8, 1
+exception_handler coprocessor_segment_overrun 9, 0
+exception_handler invalid_tss 10, 1
+exception_handler segment_not_present 11, 1
+exception_handler stack_fault 12, 1
+exception_handler general_protection 13, 1
+exception_handler page_fault 14, 1
+exception_handler fpu_error 16, 0
+exception_handler alignment_check 17, 1
+exception_handler machine_check 18, 0
+exception_handler simd_floating_point 19, 0
+exception_handler virtualization 20, 0
+exception_handler control_protection 21, 1
+
+// 8259a芯片中断
+// exception_handler time 0x20, 0
+
+    .text
+    .extern do_handler_time
+    .global exception_handler_time
+    exception_handler_time:
+        push $0
+        push $0
+        pusha
+        push %ds
+        push %es
+        push %fs
+        push %gs
+
+        push %esp
+        call do_handler_time
+        add $(1*4), %esp
+
+        pop %gs
+        pop %fs
+        pop %es
+        pop %ds
+        popa
+        add $(2*4), %esp
+        iret

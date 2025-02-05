@@ -96,4 +96,10 @@ static inline void lidt(unint32_t start, uint16_t size)
     asm("lidt %[g]" ::[g] "m"(idt));
 }
 
+// 使cpu进入暂停状态
+static inline void hlt()
+{
+    asm("hlt");
+}
+
 #endif // CPU_INSTR_H

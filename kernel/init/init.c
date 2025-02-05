@@ -9,6 +9,7 @@ void kernel_init(boot_info_t *boot_info)
 
 void init_main()
 {
+    // int a = 10 / 0;
 
     for (;;)
     {

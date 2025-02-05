@@ -9,7 +9,12 @@
         "init.h": "c",
         "cpu.h": "c",
         "os_cfg.h": "c",
-        "irq.h": "c"
+        "irq.h": "c",
+        "time.h": "c"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "marscode.codeCompletionPro": {
+        "enableCodeCompletionPro": true
+    },
+    "marscode.enableInlineCommand": true
 }

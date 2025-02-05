@@ -26,6 +26,7 @@ typedef struct _gate_desc_t
 
 #pragma pack()
 
+// -------------------------段描述符属性----------------------------
 #define SEG_G (1 << 15)
 #define SEG_D (1 << 14)
 #define SEG_P (1 << 7)
@@ -41,8 +42,16 @@ typedef struct _gate_desc_t
 
 #define SEG_TYPE_RW (1 << 1)
 
-#define KENEL_SECTION_DS (1 * 8)
-#define KENEL_SECTION_CS (2 * 8)
+// ------------------段选择子---------------------------------------
+#define KENEL_SECTION_CS (1*8)
+#define KENEL_SECTION_DS (2*8)
+
+// ----------------中断描述符属性-------------------------------------
+#define GATE_P (1 << 15)
+#define GATE_DPL0 (0 << 14)
+#define GATE_DPL3 (3 << 13)
+#define GATE_TYPE_INTERRRUPT (0xE << 8)
+#define GATE_TYPE_TRAP (0xF << 8)
 
 void cpu_init();
 
