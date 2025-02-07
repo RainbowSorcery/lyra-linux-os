@@ -10,7 +10,8 @@
         "cpu.h": "c",
         "os_cfg.h": "c",
         "irq.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "keyboard.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "marscode.codeCompletionPro": {

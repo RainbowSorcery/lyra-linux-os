@@ -43,8 +43,9 @@ typedef struct _gate_desc_t
 #define SEG_TYPE_RW (1 << 1)
 
 // ------------------段选择子---------------------------------------
-#define KENEL_SECTION_CS (1*8)
-#define KENEL_SECTION_DS (2*8)
+// 代码段必须是8 数据段必须是16 设置反了了会触发13号异常 不知道为什么
+#define KENEL_SECTION_CS (1 * 8)
+#define KENEL_SECTION_DS (2 * 8)
 
 // ----------------中断描述符属性-------------------------------------
 #define GATE_P (1 << 15)

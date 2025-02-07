@@ -83,28 +83,5 @@ exception_handler virtualization 20, 0
 exception_handler control_protection 21, 1
 
 // 8259a芯片中断
-// exception_handler time 0x20, 0
-
-    .text
-    .extern do_handler_time
-    .global exception_handler_time
-    exception_handler_time:
-        push $0
-        push $0
-        pusha
-        push %ds
-        push %es
-        push %fs
-        push %gs
-
-        push %esp
-        call do_handler_time
-        add $(1*4), %esp
-
-        pop %gs
-        pop %fs
-        pop %es
-        pop %ds
-        popa
-        add $(2*4), %esp
-        iret
+exception_handler time 0x20, 0
+exception_handler keyboard 0x21, 0

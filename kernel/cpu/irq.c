@@ -295,6 +295,7 @@ void irq_enable(int irq_num)
     }
     else
     {
+        irq_num -= 8;
         unit8_t mask = inb(PIC0_IMR) & ~(1 << irq_num);
         outb(PIC1_IMR, mask);
     }
@@ -317,6 +318,7 @@ void irq_disable(int irq_num)
     }
     else
     {
+        irq_num -= 8;
         unit8_t mask = inb(PIC0_IMR) & ~(0 << irq_num);
         outb(PIC1_IMR, mask);
     }

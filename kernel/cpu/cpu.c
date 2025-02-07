@@ -6,6 +6,7 @@
 #include "../common/cpu_instr.h"
 #include "../include/irq.h"
 #include "../include/device/time.h"
+#include "../include/device/keyboard.h"
 
 static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 
@@ -47,4 +48,5 @@ void cpu_init()
     init_gdt();
     irq_init();
     time_init();
+    init_keyboard();
 }
