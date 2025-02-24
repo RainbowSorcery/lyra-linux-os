@@ -11,7 +11,9 @@
         "os_cfg.h": "c",
         "irq.h": "c",
         "time.h": "c",
-        "keyboard.h": "c"
+        "keyboard.h": "c",
+        "mouse.h": "c",
+        "klib.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "marscode.codeCompletionPro": {

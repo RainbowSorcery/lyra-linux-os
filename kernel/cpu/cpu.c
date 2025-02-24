@@ -7,6 +7,8 @@
 #include "../include/irq.h"
 #include "../include/device/time.h"
 #include "../include/device/keyboard.h"
+#include "../include/device/mouse.h"
+#include "../tools/log.h"
 
 static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 
@@ -49,4 +51,7 @@ void cpu_init()
     irq_init();
     time_init();
     init_keyboard();
+    mouse_init();
+    log_init();
+    log_printf("hello world");
 }

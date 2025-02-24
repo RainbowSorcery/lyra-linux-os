@@ -83,5 +83,9 @@ exception_handler virtualization 20, 0
 exception_handler control_protection 21, 1
 
 // 8259a芯片中断
+// 时钟中断
 exception_handler time 0x20, 0
+// 键盘中断
 exception_handler keyboard 0x21, 0
+// 鼠标中断
+exception_handler mouse 0x2c, 0
