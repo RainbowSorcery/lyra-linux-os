@@ -13,7 +13,9 @@
         "time.h": "c",
         "keyboard.h": "c",
         "mouse.h": "c",
-        "klib.h": "c"
+        "klib.h": "c",
+        "list.h": "c",
+        "log.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "marscode.codeCompletionPro": {
