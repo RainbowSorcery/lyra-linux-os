@@ -1,4 +1,6 @@
 #include "../../common/cpu_instr.h"
+#include <stdarg.h>
+#include "../include/tools/klib.h"
 #define PORT 0x3f8
 
 // 串口初始化
@@ -20,7 +22,14 @@ int is_transmit_empty()
 
 void log_printf(const char *fmt, ...)
 {
-    const char *p = fmt;
+    char str_buffer[128];
+    va_list args;
+    va_start(args, fmt);
+    kernel_memset(str_buffer, '\0', sizeof(str_buffer));
+    kenerl_vsprintf(str_buffer, fmt, args);
+    va_end(args);
+
+    const char *p = str_buffer;
 
     while (*p != '\0')
     {

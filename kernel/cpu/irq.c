@@ -1,6 +1,7 @@
 #include "../include/irq.h"
 #include "../common/cpu_instr.h"
 #include "../include/cpu.h"
+#include "../tools/log.h"
 
 #define IDT_SIZE_NR 128
 
@@ -74,6 +75,8 @@ void exception_handler_control_protection(void);
 
 static void do_default_handler(const char *msg, exception_frame_t *frame)
 {
+    log_printf("-----------------------------------------");
+    log_printf("error:%s", msg);
     for (;;)
     {
         hlt();
