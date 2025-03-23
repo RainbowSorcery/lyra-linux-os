@@ -53,8 +53,5 @@ void cpu_init()
     init_keyboard();
     mouse_init();
     log_init();
-    log_printf("hello world, version:%s", "0.1");
-
-    // log_printf("%d %d %x %c", -123, 123456, 0x12345, 'a');
-    log_printf("%d", -123);
+    ;
 }

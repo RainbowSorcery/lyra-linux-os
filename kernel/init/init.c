@@ -19,7 +19,15 @@ void list_test()
 
 void init_main()
 {
-    list_test();
+    struct type_t
+    {
+        int i;
+        list_node_t node;
+    } v = {0x123456};
+
+    list_node_t *node = &v.node;
+
+    struct type_t *p = list_node_parent(node, struct type_t, node);
 
     for (;;)
     {

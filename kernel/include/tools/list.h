@@ -32,4 +32,23 @@ list_node_t *list_first(list_t *list);
 list_node_t *list_last(list_t *list);
 
 int list_count(list_t *list);
+
+// 将节点插入头部
+void list_head_insert(list_t *list, list_node_t *node);
+
+// 将节点插入到尾部
+void list_last_insert(list_t *list, list_node_t *node);
+
+// 计算指定节点偏移位置
+#define offset_in_parent(parent_type, node_name) \
+    (unint32_t) & (((parent_type *)0)->node_name)
+
+// 节点所在位置减去偏移位置等于当前结构体开始地址
+#define parent_addr(node, parent_type, node_name) \
+    ((unint32_t)node) - offset_in_parent(parent_type, node_name)
+
+// 将地址转换为结构体
+#define list_node_parent(node, parent_type, node_name) \
+    (parent_type *)(node ? parent_addr(node, parent_type, node_name) : 0)
+
 #endif

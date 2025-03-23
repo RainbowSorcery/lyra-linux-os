@@ -26,3 +26,37 @@ list_node_t *list_last(list_t *list)
 {
     return list->last;
 }
+
+void list_head_insert(list_t *list, list_node_t *node)
+{
+    if (list->count == 0)
+    {
+        list->first = node;
+    }
+    else
+    {
+        // 修改头节点指向节点
+        list_node_t *head = list->first;
+        head->pre = node;
+        node->next = head;
+        list->first = node;
+    }
+    list->count++;
+}
+
+void list_last_insert(list_t *list, list_node_t *node)
+{
+    if (list->count == 0)
+    {
+        list->first = node;
+        list->last = node;
+    }
+    else
+    {
+        list_node_t *lastNode = list->last;
+        lastNode->next = node;
+        node->pre = lastNode;
+    }
+
+    list->count++;
+}
