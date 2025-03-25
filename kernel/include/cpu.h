@@ -24,6 +24,20 @@ typedef struct _gate_desc_t
 
 } gate_desc_t;
 
+
+// 任务状态段
+typedef struct _task_state_segement
+{
+    unint32_t pre_link;
+    unint32_t esp0, ss0, esp1, ss1, esp2, ssp2;
+    unint32_t cr3;
+    unint32_t eip, eflags, eax,ecx, ebx, esp, ebp, esi, edi;
+    unint32_t es, cs, ss, ds, fs, gs;
+    unint32_t idt;
+    unint32_t iomap;
+} task_state_segemtn;
+
+
 #pragma pack()
 
 // -------------------------段描述符属性----------------------------

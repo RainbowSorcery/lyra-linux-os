@@ -17,19 +17,24 @@ void list_test()
     log_printf("list: first=0x%x, last=0x%x, count=%d", list_first(&list), list_last(&list), list_count(&list));
 }
 
-void init_main()
+void init_task_entry() 
 {
-    struct type_t
-    {
-        int i;
-        list_node_t node;
-    } v = {0x123456};
-
-    list_node_t *node = &v.node;
-
-    struct type_t *p = list_node_parent(node, struct type_t, node);
+    int count = 0;
 
     for (;;)
     {
+        count++;
+        log_printf("init task count:%d", count);
+    }
+}
+
+void init_main()
+{
+    int count = 0;
+
+    for (;;)
+    {
+        count++;
+        log_printf("init main count:%d", count);
     }
 }
