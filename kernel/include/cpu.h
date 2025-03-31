@@ -68,6 +68,11 @@ typedef struct _task_state_segement
 #define GATE_TYPE_INTERRRUPT (0xE << 8)
 #define GATE_TYPE_TRAP (0xF << 8)
 
+
+
+#define EFLAGS_DEFAULT (1 << 1)
+#define EFLAGS_IF (1 << 9)
+
 void cpu_init();
 
 #endif // CPU_H
