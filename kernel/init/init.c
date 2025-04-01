@@ -4,6 +4,7 @@
 #include "../include/tools/list.h"
 #include "../tools/log.h"
 #include "../include/core/task.h"
+#include "../../common/cpu_instr.h"
 
 
 void kernel_init(boot_info_t *boot_info)
@@ -31,6 +32,7 @@ void init_task_entry()
 
     for (;;)
     {
+        switch_to_tss(&first_task, &init_task);
         count++;
         log_printf("init task count:%d", count);
     }
@@ -41,12 +43,20 @@ void init_main()
     
     int count = 0;
 
-    task_init(&first_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024]);
-    task_init(&init_task, 0, 0);
+    task_init(&first_task, 0, 0);
+    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024]);
+    write_tr(first_task.tss_sel);
 
     for (;;)
     {
+        switch_to_tss(&first_task, &init_task);
         count++;
         log_printf("init main count:%d", count);
     }
+}
+
+
+void switch_to_tss(task_t* from, task_t* to) 
+{
+    far_jump(to->tss_sel, 0);
 }

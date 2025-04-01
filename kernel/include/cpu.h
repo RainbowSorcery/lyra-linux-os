@@ -37,6 +37,9 @@ typedef struct _task_state_segement
     unint32_t iomap;
 } task_state_segemtn;
 
+// 设置gdt表
+void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t attr);
+
 
 #pragma pack()
 
@@ -56,6 +59,10 @@ typedef struct _task_state_segement
 
 #define SEG_TYPE_RW (1 << 1)
 
+#define SEG_TYPE_TSS (9 << 0)
+
+
+
 // ------------------段选择子---------------------------------------
 // 代码段必须是8 数据段必须是16 设置反了了会触发13号异常 不知道为什么
 #define KENEL_SECTION_CS (1 * 8)
@@ -74,5 +81,8 @@ typedef struct _task_state_segement
 #define EFLAGS_IF (1 << 9)
 
 void cpu_init();
+
+// 获取一个空闲的gdt表项，用于设置tss段 返回描述符选择子
+int gdt_alloc_desc();
 
 #endif // CPU_H

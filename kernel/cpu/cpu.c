@@ -29,7 +29,21 @@ void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t a
     desc->base_16_23 = (base >> 16) & 0xffff;
     desc->base_24_31 = (base >> 24) & 0xff;
     desc->attr = attr | (((limit >> 16) & 0xf) << 8);
-    ;
+}
+
+int gdt_alloc_desc() 
+{
+    for (int i = 1; i < GDT_TABLE_SIZE; i++) 
+    {
+        segment_desc_t *desc = gdt_table + i;
+        // 如果属性字段是空的，那么表示这个段是空的 可以作为tss段
+        if (desc->attr == 0)
+         {
+             return i;
+         }
+    }
+
+    return -1;
 }
 
 void init_gdt()

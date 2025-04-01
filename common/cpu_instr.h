@@ -102,4 +102,10 @@ static inline void hlt()
     asm("hlt");
 }
 
+
+static inline void write_tr(uint16_t tss_sel) 
+{
+    asm("ltr %%ax" ::"a"(tss_sel));
+}
+
 #endif // CPU_INSTR_H
