@@ -32,9 +32,9 @@ void init_task_entry()
 
     for (;;)
     {
-        switch_to_tss(&first_task, &init_task);
         count++;
         log_printf("init task count:%d", count);
+        switch_to_tss(&init_task, &first_task);
     }
 }
 

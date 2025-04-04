@@ -29,9 +29,9 @@ typedef struct _gate_desc_t
 typedef struct _task_state_segement
 {
     unint32_t pre_link;
-    unint32_t esp0, ss0, esp1, ss1, esp2, ssp2;
+    unint32_t esp0, ss0, esp1, ss1, esp2, ss2;
     unint32_t cr3;
-    unint32_t eip, eflags, eax,ecx, ebx, esp, ebp, esi, edi;
+    unint32_t eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
     unint32_t es, cs, ss, ds, fs, gs;
     unint32_t idt;
     unint32_t iomap;
@@ -83,6 +83,6 @@ void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t a
 void cpu_init();
 
 // 获取一个空闲的gdt表项，用于设置tss段 返回描述符选择子
-int gdt_alloc_desc();
+uint16_t gdt_alloc_desc();
 
 #endif // CPU_H

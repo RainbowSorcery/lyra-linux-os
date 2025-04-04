@@ -91,8 +91,7 @@ void do_handler_unknown(exception_frame_t *frame)
 
 void do_handler_divide(exception_frame_t *frame)
 {
-    // do_default_handler("drivide exception", frame);
-    int a = 0212;
+    do_default_handler("drivide exception", frame);
 }
 
 void do_handler_debug(exception_frame_t *frame)

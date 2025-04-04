@@ -5,6 +5,7 @@ __asm__(".code16gcc");
 #include "../common/cpu_instr.h"
 #include "loader_16.h"
 #include "loader.h"
+#include "../kernel/include/cpu.h"
 
 boot_info_t boot_info;
 
@@ -46,7 +47,7 @@ static void enter_protect_mode(void)
     cr0 = cr0 | 0x1;
     write_cr0(cr0);
     // 0x08 是代码段选择子 远跳转清空流水线
-    far_jump((unint32_t)8, (unint32_t)protected_mode_entry);
+    far_jump(KENEL_SECTION_CS, (unint32_t)protected_mode_entry);
 }
 
 // 读取内存信息
