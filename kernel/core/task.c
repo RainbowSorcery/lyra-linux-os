@@ -37,3 +37,28 @@ int task_init(task_t *task, unint32_t entry, unint32_t esp)
     tss_init(task, entry, esp);
     return 0;
 }
+
+
+static task_managemnet_t task_managment;
+
+// 初始化任务管理器
+void init_task_managment() 
+{
+    list_init(&task_managment.ready_list);
+    list_init(&task_managment.task_list);
+    task_managment.current_task = 0;
+}
+
+// 首个任务初始化
+void task_first_init()
+{
+    task_init(&task_managment.first_task, 0, 0);
+    write_tr(task_managment.first_task.tss_sel);
+    task_managment.current_task = &task_managment.first_task;
+}
+
+// 获取首个任务
+task_t *task_first_task()
+{
+    return &task_managment.first_task;
+}

@@ -34,24 +34,25 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
-        switch_to_tss(&init_task, &first_task);
+        switch_to_tss(&init_task, task_first_task());
     }
 }
 
 void init_main()
 {
-    
+
+    init_task_managment();
     int count = 0;
 
-    task_init(&first_task, 0, 0);
     task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024]);
-    write_tr(first_task.tss_sel);
+    task_first_init();
 
     for (;;)
     {
-        switch_to_tss(&first_task, &init_task);
         count++;
         log_printf("init main count:%d", count);
+        switch_to_tss(&first_task, &init_task);
+
     }
 }
 
