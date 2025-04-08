@@ -35,6 +35,9 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
 int task_init(task_t *task, unint32_t entry, unint32_t esp)
 {
     tss_init(task, entry, esp);
+
+    
+
     return 0;
 }
 

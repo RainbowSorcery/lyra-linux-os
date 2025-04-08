@@ -51,4 +51,14 @@ void list_last_insert(list_t *list, list_node_t *node);
 #define list_node_parent(node, parent_type, node_name) \
     (parent_type *)(node ? parent_addr(node, parent_type, node_name) : 0)
 
+
+
+/**
+ * 头结点的初始化
+ * @param node 待初始化的结果
+ */
+static inline void list_node_init(list_node_t *node) {
+    node->pre = node->next = (list_node_t *)0;
+}
+
 #endif

@@ -51,7 +51,7 @@ void init_main()
     {
         count++;
         log_printf("init main count:%d", count);
-        switch_to_tss(&first_task, &init_task);
+        switch_to_tss(task_first_task(), &init_task);
 
     }
 }

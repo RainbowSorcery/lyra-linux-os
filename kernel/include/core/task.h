@@ -7,6 +7,12 @@
 
 typedef struct _task_t
 {
+    // 就绪队列节点
+    list_node_t run_node;
+
+    // 所有进程队列节点
+    list_node_t all_node;
+
     task_state_segemtn tss;
     int tss_sel;
 } task_t;
