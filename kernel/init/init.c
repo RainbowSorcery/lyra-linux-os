@@ -44,7 +44,7 @@ void init_main()
     init_task_managment();
     int count = 0;
 
-    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024]);
+    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
     task_first_init();
 
     for (;;)

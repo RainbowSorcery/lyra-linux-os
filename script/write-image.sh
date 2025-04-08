@@ -1,4 +1,4 @@
-export PROJECT_HOME_PATH=/home/lyra/os/lyra-linux-os
+export PROJECT_HOME_PATH=~/os/lyra-linux-os
 
 export DISK1_NAME=$PROJECT_HOME_PATH/image/disk1.img
 export BOOT_FILE_NAME=$PROJECT_HOME_PATH/image/boot.bin

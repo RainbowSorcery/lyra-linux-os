@@ -35,6 +35,7 @@ uint16_t gdt_table[][4] = {
 // 保护模式设置
 static void enter_protect_mode(void)
 {
+    show_msg("enter protect mode.");
     cli();
     // 开启A20地址线
     uint16_t port = (uint16_t)0x92;
@@ -72,7 +73,7 @@ static void detect_memory(void)
         // 如果signature不等于0x534D4150那么表示计算机硬件不支持e820方式读取内存信息
         if (signature != 0x534D4150)
         {
-            show_msg("signature error");
+            show_msg("signature error\n");
             break;
         }
 
@@ -97,7 +98,7 @@ static void detect_memory(void)
         }
     }
 
-    show_msg("memeory read done.");
+    show_msg("memeory read done.\n");
 }
 
 void loader_entry()

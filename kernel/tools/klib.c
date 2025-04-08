@@ -18,7 +18,7 @@ void kernel_strcpy(char *dest, const char *src)
 }
 void kernel_strcpy_size(char *dest, const char *src, int size)
 {
-    if (!*dest || !*src || size == 0)
+    if (!dest || !src || size <= 0)
     {
         return;
     }

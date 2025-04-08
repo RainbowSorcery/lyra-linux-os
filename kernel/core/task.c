@@ -5,6 +5,10 @@
 #include "../tools/log.h"
 #include "../../common/cpu_instr.h"
 
+// 任务管理器
+static task_managemnet_t task_managment;
+
+
 int tss_init(task_t *task, unint32_t entry, unint32_t esp) 
 {
     int tss_sel = gdt_alloc_desc();
@@ -32,17 +36,34 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
     return 0;
 }
 
-int task_init(task_t *task, unint32_t entry, unint32_t esp)
+int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
 {
     tss_init(task, entry, esp);
 
-    
+    list_node_init(&task->run_node);
+    list_node_init(&task->all_node);
+
+    kernel_strcpy_size(task->name, name, 32);
+    task->state = CREATE;
+
+    // 将任务添加到就绪队列中
+    task_set_ready(task);
+
+    list_last_insert(&task_managment.task_list, &task->all_node);
 
     return 0;
 }
 
 
-static task_managemnet_t task_managment;
+void task_set_ready(task_t *task) {
+    list_last_insert(&task_managment.ready_list, &task->run_node);
+    task->state = READY;
+}
+
+void task_set_block(task_t *task) {
+    list_remove(&task_managment.ready_list, &task->run_node);
+}
+
 
 // 初始化任务管理器
 void init_task_managment() 
@@ -52,10 +73,10 @@ void init_task_managment()
     task_managment.current_task = 0;
 }
 
-// 首个任务初始化
+// 首个任务初始化 需要设置第一个任务的任务段 tr寄存器 才能进行下一个任务的切换
 void task_first_init()
 {
-    task_init(&task_managment.first_task, 0, 0);
+    task_init(&task_managment.first_task, 0, 0, "first task");
     write_tr(task_managment.first_task.tss_sel);
     task_managment.current_task = &task_managment.first_task;
 }

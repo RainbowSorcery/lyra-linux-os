@@ -61,4 +61,7 @@ static inline void list_node_init(list_node_t *node) {
     node->pre = node->next = (list_node_t *)0;
 }
 
+
+void list_remove(list_t *list, list_node_t *node);
+
 #endif
