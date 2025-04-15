@@ -34,7 +34,7 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
-        switch_to_tss(&init_task, task_first_task());
+        sys_sched_yaied();
     }
 }
 
@@ -44,20 +44,13 @@ void init_main()
     init_task_managment();
     int count = 0;
 
-    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
     task_first_init();
+    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
 
     for (;;)
     {
         count++;
         log_printf("init main count:%d", count);
-        switch_to_tss(task_first_task(), &init_task);
-
+        sys_sched_yaied();
     }
-}
-
-
-void switch_to_tss(task_t* from, task_t* to) 
-{
-    far_jump(to->tss_sel, 0);
 }

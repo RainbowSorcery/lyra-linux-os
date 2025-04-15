@@ -86,3 +86,50 @@ task_t *task_first_task()
 {
     return &task_managment.first_task;
 }
+
+int sys_sched_yaied(void)
+{
+    // 任务的调度流程为在进行进程切换的时候，将当前还未运行完毕的进程从就绪队列首部移除，添加到就绪队列尾部，然后将当前运行的进程切换为就绪队列的首部的进程
+    
+    // 如果就绪队列当前只有一个任务，那么直接让这个任务一直占用cpu就行了，就没必要进行进程切换了
+    if (list_count(&task_managment.ready_list) > 1) {
+        task_current()->state = READY;
+        list_remove(&task_managment.ready_list, &task_managment.current_task->run_node);
+        list_last_insert(&task_managment.ready_list, &task_managment.current_task->run_node);
+
+        // 进行进程切换
+        task_dispach();
+    }
+}
+
+
+task_t* task_next_run() 
+{
+    list_node_t *next_task_node = list_first(&task_managment.ready_list);
+
+    return list_node_parent(next_task_node, task_t, run_node);
+}
+
+void task_dispach() 
+{
+    task_t *from_task = task_managment.current_task;
+
+    task_t* to_task = task_next_run();
+
+    to_task->state = RUNNING;
+    task_managment.current_task = to_task;
+
+    switch_to_tss(from_task, to_task);
+}
+
+task_t *task_current()
+{
+    return task_managment.current_task;
+}
+
+
+void switch_to_tss(task_t* from, task_t* to)
+{
+    log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
+    far_jump(to->tss_sel, 0);
+}

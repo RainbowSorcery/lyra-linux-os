@@ -56,6 +56,7 @@ void list_last_insert(list_t *list, list_node_t *node)
         list_node_t *lastNode = list->last;
         lastNode->next = node;
         node->pre = lastNode;
+        list->last = node;
     }
 
     list->count++;

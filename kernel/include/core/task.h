@@ -63,4 +63,14 @@ task_t *task_first_task();
 
 void task_set_ready(task_t *task);
 
+// 任务调度切换
+int sys_sched_yaied(void);
+
+task_t *task_current();
+
+void task_dispach();
+
+// 进程切换
+void switch_to_tss(task_t *from, task_t *to);
+
 #endif
