@@ -1,12 +1,15 @@
 #include "../include/device/time.h"
 #include "../../common/cpu_instr.h"
 #include "../include/irq.h"
+#include "../include/core/task.h"
 
 static unint32_t sys_tick;
 
 void do_handler_time(exception_frame_t *frame)
 {
     sys_tick++;
+
+    // 执行进程调度
 
     // 告诉8259a中断处理完成 不然无法触发下一次中断
     pic_send_eoi(0x20);

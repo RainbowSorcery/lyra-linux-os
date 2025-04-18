@@ -29,6 +29,13 @@ typedef struct _task_t
     // 任务名称
     char name[32];
     task_state_segemtn tss;
+
+    // 当slice_ticks为0时进行进程切换
+    int slice_ticks;
+
+    // 总的时间片数 用于初始化slice_ticks
+    int time_ticks;
+
     int tss_sel;
 } task_t;
 
@@ -72,5 +79,8 @@ void task_dispach();
 
 // 进程切换
 void switch_to_tss(task_t *from, task_t *to);
+
+// 时间片轮转
+void task_time_tick() 
 
 #endif

@@ -33,6 +33,9 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
 
     task->tss_sel = tss_sel;
 
+    task->time_ticks = 10;
+    task->slice_ticks = task->time_ticks;
+
     return 0;
 }
 
@@ -132,4 +135,18 @@ void switch_to_tss(task_t* from, task_t* to)
 {
     log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
     far_jump(to->tss_sel, 0);
+}
+
+void task_time_tick() 
+{
+    // 获取当前进程时间片
+    task_t * current_task = task_current();
+    // 时间片建议
+    current_task->slice_ticks--;
+    // 判断时间片是否到0 如果到0则进行进程切换
+    if (current_task->slice_ticks <= 0)
+    {
+        current_task->slice_ticks = current_task->time_ticks;
+        task_dispach();
+    }
 }
