@@ -32,7 +32,6 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
     task->tss.eflags = EFLAGS_DEFAULT | EFLAGS_IF;
 
     task->tss_sel = tss_sel;
-
     task->time_ticks = 10;
     task->slice_ticks = task->time_ticks;
 
@@ -137,8 +136,15 @@ void switch_to_tss(task_t* from, task_t* to)
     far_jump(to->tss_sel, 0);
 }
 
-void task_time_tick() 
+void task_time_tick()
 {
+    // 如果当前没进程在运行那么旧不进行切换
+    if (task_managment.current_task == 0)
+    {
+        log_printf("No process is running, no need to switch");
+        return;
+    }
+
     // 获取当前进程时间片
     task_t * current_task = task_current();
     // 时间片建议
@@ -146,7 +152,8 @@ void task_time_tick()
     // 判断时间片是否到0 如果到0则进行进程切换
     if (current_task->slice_ticks <= 0)
     {
+        // 将当前运行的进程放入到进程队列末尾
         current_task->slice_ticks = current_task->time_ticks;
-        task_dispach();
+        sys_sched_yaied();
     }
 }

@@ -81,6 +81,6 @@ void task_dispach();
 void switch_to_tss(task_t *from, task_t *to);
 
 // 时间片轮转
-void task_time_tick() 
+void task_time_tick();
 
 #endif

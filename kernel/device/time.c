@@ -7,12 +7,14 @@ static unint32_t sys_tick;
 
 void do_handler_time(exception_frame_t *frame)
 {
+    // 告诉8259a中断处理完成 不然无法触发下一次中断 必须先响应中断处理完成才能做具体业务，不然在函数调度的过程中可能打断EOI的执行，导致后续中断无法接收到
+    pic_send_eoi(0x20);
+
     sys_tick++;
 
     // 执行进程调度
+    task_time_tick();
 
-    // 告诉8259a中断处理完成 不然无法触发下一次中断
-    pic_send_eoi(0x20);
 }
 
 void init_pit()
