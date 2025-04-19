@@ -74,3 +74,11 @@ void irq_enable(int irq_num);
 void irq_disable(int irq_num);
 
 void pic_send_eoi(int irq_num);
+
+typedef unint32_t irq_state_t;
+
+
+// 开启保护临界资源
+irq_state_t irq_enter_protection(void);
+// 关闭保护临界资源
+void irq_leave_protection (irq_state_t state);

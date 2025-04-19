@@ -103,9 +103,35 @@ static inline void hlt()
 }
 
 
+// 加载tr寄存器
 static inline void write_tr(uint16_t tss_sel) 
 {
     asm("ltr %%ax" ::"a"(tss_sel));
+}
+
+
+static inline unint32_t read_eflags()
+{
+    unint32_t eflags;
+  __asm__ volatile (
+        "pushf\n\t"     // 压入标志寄存器到栈
+        "pop %0"        // 弹出到变量 flags
+        : "=r" (eflags)  // 输出操作数
+        :               // 无输入操作数
+        : "memory"      // 防止编译器优化
+    );
+    return eflags;
+}
+
+static inline void write_eflags(unint32_t eflags)
+{
+        __asm__ volatile (
+        "push %0\n\t"   // 将 flags 的值压入栈
+        "popf"          // 弹出到 eflags/rflags
+        :              // 无输出操作数
+        : "r" (eflags)  // 输入操作数
+        : "memory", "cc" // 告知编译器内存和条件码被修改
+    );
 }
 
 #endif // CPU_INSTR_H

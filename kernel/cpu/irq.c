@@ -337,3 +337,18 @@ void irq_enable_global()
 {
     sti();
 }
+
+
+// 开启保护临界资源 
+irq_state_t irq_enter_protection(void)
+{
+    // 当进行临界资源保护时开启中断，避免在执行临界代码块的时候被打断，这里读取eflags的当前值，在开中断的时候恢复回去
+    // 如果不读eflags的值在关中断的时候直接恢复会导致，在运行临界资源前已经关闭中断了，但是临界资源运行完成后又开中断会使程序运行错误
+    unint32_t eflags = read_eflags();
+    irq_disable_global();
+}
+// 关闭保护临界资源
+void irq_leave_protection (irq_state_t state)
+{
+    write_eflags(state);
+}

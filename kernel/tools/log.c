@@ -1,6 +1,7 @@
 #include "../../common/cpu_instr.h"
 #include <stdarg.h>
 #include "../include/tools/klib.h"
+#include "../include/irq.h"
 #define PORT 0x3f8
 
 // 串口初始化
@@ -29,6 +30,8 @@ void log_printf(const char *fmt, ...)
     kenerl_vsprintf(str_buffer, fmt, args);
     va_end(args);
 
+    irq_state_t state = irq_enter_protection();
+    
     const char *p = str_buffer;
 
     while (*p != '\0')
@@ -40,4 +43,6 @@ void log_printf(const char *fmt, ...)
 
     outb(PORT, '\r');
     outb(PORT, '\n');
+
+    irq_leave_protection(state);
 }

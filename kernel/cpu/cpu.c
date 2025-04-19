@@ -14,6 +14,7 @@ static segment_desc_t gdt_table[GDT_TABLE_SIZE];
 
 void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t attr)
 {
+    irq_state_t state = irq_enter_protection();
     // selector表示偏移量 从gdt表开始到偏移的字节数 传参传进来的是*8，我们只需要gdt_table的下标数所有需要除8
 
     // 判断limit是否超过了20位，那么将G标志位设置成1表述以4KB为单位
@@ -29,19 +30,24 @@ void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t a
     desc->base_16_23 = (base >> 16) & 0xff;
     desc->base_24_31 = (base >> 24) & 0xff;
     desc->attr = attr | (((limit >> 16) & 0xf) << 8);
+    irq_leave_protection(state);
+
 }
 
 uint16_t gdt_alloc_desc() 
 {
+    irq_state_t state = irq_enter_protection();
     for (int i = 1; i < GDT_TABLE_SIZE; i++) 
     {
         segment_desc_t *desc = gdt_table + i;
         // 如果属性字段是空的，那么表示这个段是空的 可以作为tss段
         if (desc->attr == 0)
          {
+             irq_leave_protection(state);
              return i * sizeof(segment_desc_t);
          }
     }
+    irq_leave_protection(state);
 
     return -1;
 }

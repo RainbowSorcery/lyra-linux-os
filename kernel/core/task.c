@@ -4,7 +4,7 @@
 #include "../include/cpu.h"
 #include "../tools/log.h"
 #include "../../common/cpu_instr.h"
-
+#include "../include/irq.h"
 // 任务管理器
 static task_managemnet_t task_managment;
 
@@ -40,6 +40,7 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
 
 int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
 {
+    irq_state_t state =  irq_enter_protection();
     tss_init(task, entry, esp);
 
     list_node_init(&task->run_node);
@@ -52,7 +53,7 @@ int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
     task_set_ready(task);
 
     list_last_insert(&task_managment.task_list, &task->all_node);
-
+    irq_leave_protection (state);
     return 0;
 }
 
@@ -114,14 +115,15 @@ task_t* task_next_run()
 
 void task_dispach() 
 {
+    irq_state_t state =  irq_enter_protection();
     task_t *from_task = task_managment.current_task;
 
     task_t* to_task = task_next_run();
 
     to_task->state = RUNNING;
     task_managment.current_task = to_task;
-
     switch_to_tss(from_task, to_task);
+    irq_leave_protection (state);
 }
 
 task_t *task_current()
