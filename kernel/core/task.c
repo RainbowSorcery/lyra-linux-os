@@ -62,6 +62,7 @@ int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
 
 
 void task_set_ready(task_t *task) {
+    // 如果当前进程是空闲进程那么就不需要插入到就绪队列中
     if (task == &task_managment.idle_task) 
     {
         return;
@@ -72,6 +73,10 @@ void task_set_ready(task_t *task) {
 }
 
 void task_set_block(task_t *task) {
+    // 如果当前进程是空闲进程那么就不需要从就绪队列中移除
+    if (task == &task_managment.idle_task) {
+        return;
+    }
     list_remove(&task_managment.ready_list, &task->run_node);
 }
 
