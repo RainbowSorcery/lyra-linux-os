@@ -34,6 +34,7 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
+        sys_sleep(5000);
     }
 }
 
@@ -50,5 +51,7 @@ void init_main()
     {
         count++;
         log_printf("init main count:%d", count);
+
+        sys_sleep(5000);
     }
 }

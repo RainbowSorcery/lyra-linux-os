@@ -5,9 +5,12 @@
 #include "../tools/log.h"
 #include "../../common/cpu_instr.h"
 #include "../include/irq.h"
+#include "../include/device/time.h"
+
 // 任务管理器
 static task_managemnet_t task_managment;
 
+static unint32_t idlte_task_stack[1024];
 
 int tss_init(task_t *task, unint32_t entry, unint32_t esp) 
 {
@@ -59,6 +62,11 @@ int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
 
 
 void task_set_ready(task_t *task) {
+    if (task == &task_managment.idle_task) 
+    {
+        return;
+    }
+
     list_last_insert(&task_managment.ready_list, &task->run_node);
     task->state = READY;
 }
@@ -73,6 +81,9 @@ void init_task_managment()
 {
     list_init(&task_managment.ready_list);
     list_init(&task_managment.task_list);
+    list_init(&task_managment.sleep_list);
+
+    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idlt task");
     task_managment.current_task = 0;
 }
 
@@ -109,6 +120,12 @@ int sys_sched_yaied(void)
 task_t* task_next_run() 
 {
     list_node_t *next_task_node = list_first(&task_managment.ready_list);
+    
+    // 如果当前所有进行都进休眠了，那么就 跳转到休眠进程中
+    if (next_task_node == 0) 
+    {
+        return &task_managment.idle_task;
+    }
 
     return list_node_parent(next_task_node, task_t, run_node);
 }
@@ -157,5 +174,85 @@ void task_time_tick()
         // 将当前运行的进程放入到进程队列末尾
         current_task->slice_ticks = current_task->time_ticks;
         sys_sched_yaied();
+    }
+
+    // 遍历睡眠队列，判断是否到时间片，如果到时间片那么从睡眠队列移动到就绪队列中
+    list_t* sleep_list = &task_managment.sleep_list;
+
+    list_node_t *task_node = list_first(sleep_list);
+
+    if (task_node != 0) 
+    {
+        task_t *task = list_node_parent(task_node, task_t, run_node);
+        unint32_t sleep_ticks = task->sleep_ticks;
+        task->sleep_ticks = --sleep_ticks;
+
+        if (sleep_ticks == 0) 
+        {
+            task_set_wakeup(task);
+            task_set_ready(task);
+            sys_sched_yaied();
+        }
+
+        while (task_node->next != 0)
+        {
+            task_node = task_node->next;
+            task_t *next_task = list_node_parent(task_node, task_t, run_node);
+            task_set_wakeup(next_task);
+            task_set_ready(next_task);
+        }
+        sys_sched_yaied();
+    }
+}
+
+// 将进程添加到休眠队列中
+void task_set_sleep(task_t *task, unint32_t ticks)
+{
+    if (ticks <= 0) 
+    {
+        return;
+    }
+
+    // 将进程从就绪队列中移除并加入到休眠队列中
+    task->state = SLEEP;
+    task->sleep_ticks = ticks;
+    list_last_insert(&task_managment.sleep_list, &task->run_node);
+    // 进行进程切换
+    task_dispach();
+
+}
+// 将进程从休眠队列中移除
+void task_set_wakeup(task_t *task)
+{
+    list_remove(&task_managment.sleep_list, &task->run_node);
+}
+
+// 进行休眠
+void sys_sleep(unint32_t ms)
+{
+    irq_state_t state = irq_enter_protection();
+
+    // 将当前进程从就绪队列中移除
+    task_t *current_tasak = task_current();
+    task_set_block(current_tasak);
+
+    // 计算休眠时间片
+    unint32_t sleep_ticks = ms / OS_TICKS_MS;
+    if (ms % OS_TICKS_MS > 0) {
+        sleep_ticks++;
+    }
+
+    // 进行休眠
+    task_set_sleep(current_tasak, sleep_ticks);
+
+    irq_leave_protection(state);
+}
+
+// 如果所有进程都睡眠了，那么就跳到这个空闲进程里，避免进程切换错误
+void idle_task_entry()
+{
+    for (;;) 
+    {
+        hlt();
     }
 }

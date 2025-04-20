@@ -31,10 +31,13 @@ typedef struct _task_t
     task_state_segemtn tss;
 
     // 当slice_ticks为0时进行进程切换
-    int slice_ticks;
+    unint32_t slice_ticks;
 
     // 总的时间片数 用于初始化slice_ticks
-    int time_ticks;
+    unint32_t time_ticks;
+
+    // 休眠时间片 
+    unint32_t sleep_ticks;
 
     int tss_sel;
 } task_t;
@@ -52,8 +55,14 @@ typedef struct _task_managemnet_t
     // 所有进程队列
     list_t task_list;
 
+    // 休眠队列
+    list_t sleep_list;
+
     // 当前正在运行的任务
     task_t *current_task;
+
+    // 空闲进程 当所有进程都进行休眠了，那么就跳到这个空闲进程进行执行
+    task_t idle_task;
 
     // 首个任务
     task_t first_task;
@@ -82,5 +91,17 @@ void switch_to_tss(task_t *from, task_t *to);
 
 // 时间片轮转
 void task_time_tick();
+
+// 将进程添加到休眠队列中
+void task_set_sleep(task_t *task, unint32_t ticks);
+
+// 将进程从休眠队列中移除
+void task_set_wakeup(task_t *task);
+
+// 进行休眠
+void sys_sleep(unint32_t ms);
+
+// 如果所有进程都睡眠了，那么就跳到这个空闲进程里，避免进程切换错误
+void idle_task_entry();
 
 #endif

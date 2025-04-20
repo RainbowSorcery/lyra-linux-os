@@ -20,7 +20,7 @@ void do_handler_time(exception_frame_t *frame)
 void init_pit()
 {
     // 时钟计数器 每秒时钟频率有RIT_OSC_FREQ Hz 除1000计算出每毫秒多少时钟频率，最后计算出OS_TICKS_MS毫秒是多少频率
-    unint32_t reload_count = RIT_OSC_FREQ / (1000.0 * OS_TICKS_MS);
+    unint32_t reload_count = RIT_OSC_FREQ / (1000.0 / OS_TICKS_MS);
     outb(PIT_COMMAND_MODE_PORT, PIT_COMMAND_CHANNEL_0 | PIT_COMMAND_ACCESS_MODE | PIT_COMMAND_OPER_MODE);
 
     outb(PIT_COMMAND_DATA_PORT, (reload_count & 0xff));
