@@ -41,7 +41,7 @@ void list_head_insert(list_t *list, list_node_t *node)
         node->next = head;
         list->first = node;
     }
-    list->count++;
+    ++list->count;
 }
 
 void list_last_insert(list_t *list, list_node_t *node)
@@ -59,13 +59,11 @@ void list_last_insert(list_t *list, list_node_t *node)
         list->last = node;
     }
 
-    list->count++;
+    ++list->count;
 }
 
 void list_remove(list_t *list, list_node_t *node)
 {
-    list->count--;
-
     // 如果删除的是头节点 那么设置头节点为下一个节点
     if (list->first == node) {
         list->first = list->first->next;
@@ -83,4 +81,5 @@ void list_remove(list_t *list, list_node_t *node)
     
     // 清空删除节点的指向关系
     node->pre = node->next = (list_node_t*)0;
+    --list->count;
 }

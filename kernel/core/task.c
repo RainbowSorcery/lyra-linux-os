@@ -89,7 +89,7 @@ void init_task_managment()
     list_init(&task_managment.task_list);
     list_init(&task_managment.sleep_list);
 
-    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idlt task");
+    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
     task_managment.current_task = 0;
 }
 
@@ -139,6 +139,12 @@ task_t* task_next_run()
 void task_dispach() 
 {
     irq_state_t state =  irq_enter_protection();
+    // 如果当前就绪队列为空且正在运行空闲任务，那么不进行任务切换
+    if (list_count(&task_managment.ready_list) == 0 && task_managment.current_task == &task_managment.idle_task)
+    {
+        irq_leave_protection (state);
+        return;
+    }
     task_t *from_task = task_managment.current_task;
 
     task_t* to_task = task_next_run();
@@ -179,11 +185,11 @@ void task_time_tick()
     {
         // 将当前运行的进程放入到就绪队列末尾
         current_task->slice_ticks = current_task->time_ticks;
-        sys_sched_yaied();
+        task_dispach();
     }
 
     // 遍历睡眠队列，判断是否到时间片，如果到时间片那么从睡眠队列移动到就绪队列中
-    list_t* sleep_list = &task_managment.sleep_list;
+    list_t *sleep_list = &task_managment.sleep_list;
 
     list_node_t *task_node = list_first(sleep_list);
 
@@ -197,17 +203,22 @@ void task_time_tick()
         {
             task_set_wakeup(task);
             task_set_ready(task);
-            sys_sched_yaied();
+            task_dispach();
         }
 
         while (task_node->next != 0)
         {
             task_node = task_node->next;
             task_t *next_task = list_node_parent(task_node, task_t, run_node);
-            task_set_wakeup(next_task);
-            task_set_ready(next_task);
+            // 遍历整个列表睡眠时间片到了再进行进程切换 之前没做判断直接切换 导致即便是运行的是空闲进程夜进行了切换最终出现异常操作
+            if (next_task->sleep_ticks == 0)
+            {
+                task_set_wakeup(next_task);
+                task_set_ready(next_task);
+                task_dispach();
+            }
+
         }
-        sys_sched_yaied();
     }
 }
 

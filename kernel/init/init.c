@@ -34,9 +34,10 @@ void init_task_entry()
 
     for (;;)
     {
-        semaphore_wait(&sem);
+        // semaphore_wait(&sem);
         count++;
         log_printf("init task count:%d", count);
+        sys_sleep(1000);
     }
 }
 
@@ -56,7 +57,7 @@ void init_main()
         count++;
         log_printf("init main count:%d", count);
 
-        semaphore_notify(&sem);
-
+        // semaphore_notify(&sem);
+        sys_sleep(1000);
     }
 }
