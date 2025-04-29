@@ -48,6 +48,7 @@ int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
 
     list_node_init(&task->run_node);
     list_node_init(&task->all_node);
+    list_node_init(&task->wait_node);
 
     kernel_strcpy_size(task->name, name, 32);
     task->state = CREATE;
@@ -176,7 +177,7 @@ void task_time_tick()
     // 判断时间片是否到0 如果到0则进行进程切换
     if (current_task->slice_ticks <= 0)
     {
-        // 将当前运行的进程放入到进程队列末尾
+        // 将当前运行的进程放入到就绪队列末尾
         current_task->slice_ticks = current_task->time_ticks;
         sys_sched_yaied();
     }

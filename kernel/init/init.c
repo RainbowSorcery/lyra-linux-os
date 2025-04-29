@@ -5,7 +5,9 @@
 #include "../tools/log.h"
 #include "../include/core/task.h"
 #include "../../common/cpu_instr.h"
+#include "../include/ipc/semaphore.h"
 
+semaphore_t sem;
 
 void kernel_init(boot_info_t *boot_info)
 {
@@ -32,9 +34,9 @@ void init_task_entry()
 
     for (;;)
     {
+        semaphore_wait(&sem);
         count++;
         log_printf("init task count:%d", count);
-        sys_sleep(5000);
     }
 }
 
@@ -47,11 +49,14 @@ void init_main()
     task_first_init();
     task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
 
+    semaphore_init(&sem, 0);
+
     for (;;)
     {
         count++;
         log_printf("init main count:%d", count);
 
-        sys_sleep(5000);
+        semaphore_notify(&sem);
+
     }
 }

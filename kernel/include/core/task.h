@@ -13,6 +13,9 @@ typedef struct _task_t
     // 所有进程队列节点
     list_node_t all_node;
 
+    // 信号量等待节点
+    list_node_t wait_node;
+
     // 任务状态
     enum {
         // 创建
@@ -103,5 +106,8 @@ void sys_sleep(unint32_t ms);
 
 // 如果所有进程都睡眠了，那么就跳到这个空闲进程里，避免进程切换错误
 void idle_task_entry();
+
+// 将任务从就绪队列中移除
+void task_set_block(task_t *task);
 
 #endif

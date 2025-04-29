@@ -18,7 +18,8 @@
         "log.h": "c",
         "task.h": "c",
         "cstdint": "c",
-        "stdarg.h": "c"
+        "stdarg.h": "c",
+        "semaphore.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "marscode.codeCompletionPro": {
