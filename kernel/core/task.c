@@ -185,6 +185,8 @@ void task_time_tick()
     {
         // 将当前运行的进程放入到就绪队列末尾
         current_task->slice_ticks = current_task->time_ticks;
+        task_set_block(current_task);
+        task_set_ready(current_task);
         task_dispach();
     }
 
