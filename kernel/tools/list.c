@@ -67,19 +67,24 @@ void list_remove(list_t *list, list_node_t *node)
     // 如果删除的是头节点 那么设置头节点为下一个节点
     if (list->first == node) {
         list->first = list->first->next;
-    }
-
-    // 如果删除的是尾节点 那么将之前的尾节点的前驱节点设置成尾节点
-    if (list->last == node) {
+    } 
+    else if (list->last == node)
+    {
+        // 如果删除的是尾节点 那么将之前的尾节点的前驱节点设置成尾节点
         list->last = list->last->pre;
     }
-
-    // 如果删除的是中间节点 那么将删除节点的上一个节点连接删除节点的下一个节点
-    if (node->pre != 0) {
+    else if (node->pre != 0) 
+    {
+        // 如果删除的是中间节点 那么将删除节点的上一个节点连接删除节点的下一个节点
         node->pre->next = node->next;
     }
     
     // 清空删除节点的指向关系
     node->pre = node->next = (list_node_t*)0;
     --list->count;
+
+    if (list->count == 0)
+    {
+        list->last = (list_node_t *)0;
+    }
 }

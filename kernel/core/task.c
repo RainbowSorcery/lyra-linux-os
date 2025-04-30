@@ -145,6 +145,7 @@ void task_dispach()
         irq_leave_protection (state);
         return;
     }
+
     task_t *from_task = task_managment.current_task;
 
     task_t* to_task = task_next_run();
@@ -169,6 +170,7 @@ void switch_to_tss(task_t* from, task_t* to)
 
 void task_time_tick()
 {
+    irq_state_t state = irq_enter_protection();
     // 如果当前没进程在运行那么旧不进行切换
     if (task_managment.current_task == 0)
     {
@@ -222,6 +224,7 @@ void task_time_tick()
 
         }
     }
+    irq_leave_protection(state);
 }
 
 // 将进程添加到休眠队列中
@@ -257,7 +260,8 @@ void sys_sleep(unint32_t ms)
 
     // 计算休眠时间片
     unint32_t sleep_ticks = ms / OS_TICKS_MS;
-    if (ms % OS_TICKS_MS > 0) {
+    if (ms % OS_TICKS_MS > 0) 
+    {
         sleep_ticks++;
     }
 
