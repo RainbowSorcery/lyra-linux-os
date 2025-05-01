@@ -36,8 +36,8 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
-        sys_sleep(1000);
-        // semaphore_wait(&sem);
+        // sys_sleep(1000);
+        semaphore_wait(&sem);
     }
 }
 
@@ -50,14 +50,14 @@ void init_main()
     task_first_init();
     task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
 
-    // semaphore_init(&sem, 0);
+    semaphore_init(&sem, 0);
 
     for (;;)
     {
         count++;
         log_printf("init main count:%d", count);
 
-        // semaphore_notify(&sem);
-        sys_sleep(1000);
+        semaphore_notify(&sem);
+        // sys_sleep(1000);
     }
 }

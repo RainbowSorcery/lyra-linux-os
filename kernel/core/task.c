@@ -139,16 +139,19 @@ task_t* task_next_run()
 void task_dispach() 
 {
     irq_state_t state =  irq_enter_protection();
+ 
+
+    task_t *from_task = task_managment.current_task;
+    task_t* to_task = task_next_run();
+
     // 如果当前就绪队列为空且正在运行空闲任务，那么不进行任务切换
-    if (list_count(&task_managment.ready_list) == 0 && task_managment.current_task == &task_managment.idle_task)
+    if (list_count(&task_managment.ready_list) == 0 
+        && task_managment.current_task == &task_managment.idle_task 
+        || from_task == to_task)
     {
         irq_leave_protection (state);
         return;
     }
-
-    task_t *from_task = task_managment.current_task;
-
-    task_t* to_task = task_next_run();
 
     to_task->state = RUNNING;
     task_managment.current_task = to_task;
