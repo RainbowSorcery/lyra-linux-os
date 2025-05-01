@@ -3,6 +3,10 @@
 #include "../include/tools/klib.h"
 #include "../include/irq.h"
 #define PORT 0x3f8
+#include "../include/ipc/mutex.h"
+
+static mutex_t lock;
+
 
 // 串口初始化
 void log_init()
@@ -14,6 +18,8 @@ void log_init()
     outb(PORT + 3, 0x03); // 8位，无奇偶校验，一个停止位
     outb(PORT + 2, 0xC7); // 开启FIFO，清零，14字节阈值
     outb(PORT + 4, 0x0F);
+
+    mutex_init(&lock);
 }
 
 int is_transmit_empty()
@@ -23,6 +29,7 @@ int is_transmit_empty()
 
 void log_printf(const char *fmt, ...)
 {
+    mutex_lock(&lock);
     char str_buffer[128];
     va_list args;
     va_start(args, fmt);
@@ -30,7 +37,6 @@ void log_printf(const char *fmt, ...)
     kenerl_vsprintf(str_buffer, fmt, args);
     va_end(args);
 
-    irq_state_t state = irq_enter_protection();
     
     const char *p = str_buffer;
 
@@ -44,5 +50,6 @@ void log_printf(const char *fmt, ...)
     outb(PORT, '\r');
     outb(PORT, '\n');
 
-    irq_leave_protection(state);
+    mutex_unlock(&lock);
+
 }

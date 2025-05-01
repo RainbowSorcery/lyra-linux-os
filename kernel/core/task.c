@@ -167,7 +167,7 @@ task_t *task_current()
 
 void switch_to_tss(task_t* from, task_t* to)
 {
-    log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
+    // log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
     far_jump(to->tss_sel, 0);
 }
 
