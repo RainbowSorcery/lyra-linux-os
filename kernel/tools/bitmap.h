@@ -9,7 +9,7 @@ typedef struct _bitmap_t
 } bit_map_t;
 
 // 获取位图占用字节数
-void bitmap_byte_count(int bit_count) 
+int bitmap_byte_count(int bit_count);
 
 // 初始化页表
 void bitmap_init(bit_map_t *bitmap, unit8_t *bits, int count, int init_bit);
@@ -24,7 +24,7 @@ int bitmap_get_bit(bit_map_t *bitmap, unit8_t index);
 void bitmap_set_bit(bit_map_t *bitmap, int index, int count, int bit);
 
 // 判断指定位图释放被使用
-int bitmap_set_bit(bit_map_t *bitmap, int index);
+int bitmap_is_set(bit_map_t *bitmap, int index);
 
 // 连续分配指定长度位图
 int bitmap_alloc_nbits(bit_map_t *bitmap, int bit, int count);
