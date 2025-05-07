@@ -1,0 +1,23 @@
+#include "../../../common/types.h"
+#include "../tools/bitmap.h"
+#include "../ipc/mutex.h"
+
+typedef struct _addr_alloc_t
+{
+    // 互斥锁，避免在内存分配的时候出现冲突
+    mutex_t lock;
+
+    // 位图
+    bit_map_t *bitmap;
+
+    // 开始地址
+    unint32_t start;
+
+    // 内存空间大小
+    unint32_t size;
+
+    // 页大小
+    unint32_t page_size;
+} addr_alloc_t;
+;
+void memory_init()

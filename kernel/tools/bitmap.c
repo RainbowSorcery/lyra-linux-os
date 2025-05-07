@@ -1,4 +1,4 @@
-#include "bitmap.h"
+#include "../include/tools/bitmap.h"
 #include "../include/tools/klib.h"
 
 
