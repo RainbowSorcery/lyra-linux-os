@@ -1,6 +1,8 @@
 #include "../../../common/types.h"
 #include "../tools/bitmap.h"
 #include "../ipc/mutex.h"
+#include "../../../common/boot_info.h"
+
 
 typedef struct _addr_alloc_t
 {
@@ -20,4 +22,4 @@ typedef struct _addr_alloc_t
     unint32_t page_size;
 } addr_alloc_t;
 ;
-void memory_init()
+void memory_init(boot_info_t *boot_info);

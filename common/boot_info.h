@@ -1,3 +1,6 @@
+#ifndef BOOT_INFO_H  
+#define BOOT_INFO_H  
+
 #include "types.h"
 
 #define BOOT_RAM_REGION_MAX 10
@@ -13,3 +16,5 @@ typedef struct boot_info_t
 
     int ram_region_count;
 } boot_info_t;
+
+#endif // BOOT_INFO_H  

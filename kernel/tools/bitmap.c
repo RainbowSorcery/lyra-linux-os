@@ -19,7 +19,7 @@ void bitmap_init(bit_map_t *bitmap, unit8_t *bits, int count, int init_bit)
 
     int bytes = bitmap_byte_count(count);
 
-    kernel_memset(bits, init_bit, count);
+    kernel_memset(bits, init_bit, bytes);
 }
 
 // 获取指定位图数据
@@ -35,11 +35,11 @@ void bitmap_set_bit(bit_map_t *bitmap, int index, int count, int bit)
     {
         if (bit)
         {
-            bitmap->bits[index / 8] |= (1 >> (index % 8));
+            bitmap->bits[index / 8] |= (1 << (index % 8 + i));
         }
         else 
         {
-            bitmap->bits[index / 8] &= ~(1 >> (index % 8));
+            bitmap->bits[index / 8] &= ~(1 << (index % 8 + i));
         }
     }
 }
@@ -69,7 +69,7 @@ int bitmap_alloc_nbits(bit_map_t *bitmap, int bit, int count)
         // 遍历后面几个连续的位图值是否为目标值，如果有一个不是则跳出循环，重新进行遍历
         for (i = 0; i < count && serach_index < bitmap->bit_count; i++)
         {
-            if (bitmap_get_bit(bitmap, i) != bit)
+            if (bitmap_get_bit(bitmap, serach_index) != bit)
             {
                 ok_index = -1;
                 break;
@@ -78,8 +78,8 @@ int bitmap_alloc_nbits(bit_map_t *bitmap, int bit, int count)
         // 如果遍历了整个长度都是目标值那么同意修改位图
         if (i >= count)
         {
-            bitmap_set_bit(bitmap, serach_index, count, bit);
-            return 0;
+            bitmap_set_bit(bitmap, serach_index, count, ~bit);
+            return serach_index;
         }
     }
 
