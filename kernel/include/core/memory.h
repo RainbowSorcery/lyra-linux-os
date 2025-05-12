@@ -3,6 +3,11 @@
 #include "../ipc/mutex.h"
 #include "../../../common/boot_info.h"
 
+// 页起始地址
+#define MEM_EXT_START (1024 * 1024)
+// 页大小 4kb
+#define MEM_PAGE_SIZE (4 * 1024)
+
 
 typedef struct _addr_alloc_t
 {

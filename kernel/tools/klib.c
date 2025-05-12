@@ -227,3 +227,24 @@ void kenerl_vsprintf(char *buffer, const char *fmt, va_list args)
         }
     }
 }
+
+
+
+unint32_t down2(unint32_t size, unint32_t bound)
+{
+    // 例如 32取整3  32 / 3 = 10 * 3 = 30，可以有30个对齐的
+    return size / bound * bound;
+}
+
+void up2(unint32_t size, unint32_t bound)
+{
+    unint32_t result = size / bound;
+
+    if (size % bound > 0)
+    {
+        result++;
+    
+    }
+
+    return result;
+}

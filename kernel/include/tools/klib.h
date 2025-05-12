@@ -25,4 +25,9 @@ int kernel_memcmp(void *dl, void *d2, int size);
 void kenerl_sprintf(char *buffer, const char *fmt, ...);
 void kenerl_vsprintf(char *buffer, const char *fmt, va_list args);
 
+// 将指指定值转成指定倍数对齐 向下取整
+unint32_t down2(unint32_t size, unint32_t bound);
+// 将指指定值转成指定倍数对齐 向上取整
+void up2(unint32_t size, unint32_t bound);
+
 #endif

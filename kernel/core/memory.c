@@ -1,5 +1,8 @@
 #include "../include/core/memory.h"
 #include "../kernel/tools/log.h"
+#include "../include/tools/klib.h"
+
+static addr_alloc_t paddr_alloc;
 
 static void addr_alloc_init(addr_alloc_t *addr_alloc, unit8_t *bits, unint32_t start, unint32_t size, unint32_t page_size) 
 {
@@ -40,24 +43,45 @@ static void addr_alloc_free(addr_alloc_t *alloc, int addr, int page_count)
 
 }
 
+unint32_t total_mem_size(boot_info_t *boot_info)
+{
+    unint32_t size = 0;
+    for (int i = 0; i < boot_info->ram_region_count; i++)
+    {
+        size += boot_info->ram_regin_confg[i].size;
+    }
+    return size;
+}
+
+void show_memory_info(boot_info_t *boot_info) 
+{
+    log_printf("mem region:");
+
+    for (int i = 0; i < boot_info->ram_region_count; i++)
+    {
+        log_printf("[%d]: 0x%x-0x%x", i, 
+            boot_info->ram_regin_confg[i].start, 
+            boot_info->ram_regin_confg[i].size);
+    }
+}
+
 void memory_init(boot_info_t *boot_info)
 {
-    addr_alloc_t addr_alloc;
-    unit8_t bits[8];
+    extern unit8_t *mem_free_start;
 
-    addr_alloc_init(&addr_alloc, bits, 0x1000, 64 * 4096, 4096);
+    log_printf("mem init");
+    show_memory_info(boot_info);
 
-    for (int i = 0; i < 32; i++)
-    {
-        unint32_t addr = addr_alloc_page(&addr_alloc, 2);
-        log_printf("addr:0x%x", addr);
-    }
-    int baseAddr = 0x1000;
-    for (int i = 0; i < 32; i++)
-    {
-        addr_alloc_free(&addr_alloc, baseAddr, 2);
-        baseAddr += 8192;
-    }
+    // 1M以上内存空间
+    unint32_t mem_up1MB_free = total_mem_size(boot_info) - MEM_EXT_START;
 
-    log_printf("");
+    mem_up1MB_free = down2(mem_up1MB_free, MEM_PAGE_SIZE);
+    log_printf("free memory: 0x%x, size:0x%x", MEM_EXT_START, mem_up1MB_free);
+
+    unit8_t *mem_free = (unit8_t *)&mem_free_start;
+
+    addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, mem_up1MB_free / MEM_PAGE_SIZE);
+
+    // 跳过位图缓存区位置
+    mem_free += bitmap_byte_count(paddr_alloc.size / MEM_PAGE_SIZE);
 }
