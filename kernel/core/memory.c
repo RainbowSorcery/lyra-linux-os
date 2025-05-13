@@ -77,7 +77,7 @@ void memory_init(boot_info_t *boot_info)
 
     mem_up1MB_free = down2(mem_up1MB_free, MEM_PAGE_SIZE);
     log_printf("free memory: 0x%x, size:0x%x", MEM_EXT_START, mem_up1MB_free);
-
+        
     unit8_t *mem_free = (unit8_t *)&mem_free_start;
 
     addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, mem_up1MB_free / MEM_PAGE_SIZE);
