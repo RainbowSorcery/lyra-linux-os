@@ -59,7 +59,7 @@ void init_main()
         count++;
         log_printf("init main count:%d", count);
 
-        // semaphore_notify(&sem);
-        // sys_sleep(1000);
+        semaphore_notify(&sem);
+        sys_sleep(1000);
     }
 }

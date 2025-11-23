@@ -72,6 +72,40 @@ static inline void write_cr0(unint32_t val)
     asm("mov %%eax, %%cr0" ::"a"(val));
 }
 
+// 读取cr3寄存器的值并返回
+static inline unint32_t read_cr3()
+{
+    unint32_t rv;
+    asm("mov %%cr3, %%eax" : "=a"(rv));
+
+    return rv;
+}
+
+// 写回cr3寄存器
+static inline void write_cr3(unint32_t val)
+{
+    asm("mov %%eax, %%cr3" ::"a"(val));
+}
+
+
+// 读取cr4寄存器的值并返回
+static inline unint32_t read_cr4()
+{
+    unint32_t rv;
+    asm("mov %%cr4, %%eax" : "=a"(rv));
+
+    return rv;
+}
+
+// 写回cr4寄存器
+static inline void write_cr4(unint32_t val)
+{
+    asm("mov %%eax, %%cr4" ::"a"(val));
+}
+
+
+
+
 // 地址跳转
 static inline void far_jump(unint32_t selector, unint32_t offset)
 {
