@@ -61,6 +61,9 @@ typedef struct _task_managemnet_t
     // 休眠队列
     list_t sleep_list;
 
+    // 任务管理器初始化状态
+    int init_state;
+
     // 当前正在运行的任务
     task_t *current_task;
 

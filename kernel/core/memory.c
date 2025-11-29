@@ -80,8 +80,8 @@ void memory_init(boot_info_t *boot_info)
         
     unit8_t *mem_free = (unit8_t *)&mem_free_start;
 
-    addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, mem_up1MB_free / MEM_PAGE_SIZE);
+    // addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, mem_up1MB_free / MEM_PAGE_SIZE);
 
     // 跳过位图缓存区位置
-    mem_free += bitmap_byte_count(paddr_alloc.size / MEM_PAGE_SIZE);
+    // mem_free += bitmap_byte_count(paddr_alloc.size / MEM_PAGE_SIZE);
 }

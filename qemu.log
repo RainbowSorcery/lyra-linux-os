@@ -202,26 +202,34 @@ CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 0
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 1
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 0
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 1
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 1
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 1
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 1
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 1
+CR0 update: CR0=0x00000010
+CR0 update: CR0=0x00000011
+CR0 update: CR0=0x00000010
+CR0 update: CR0=0x00000011
+CR0 update: CR0=0x00000010
+CR0 update: CR0=0x00000011
+CR0 update: CR0=0x00000010
+CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
@@ -487,6 +495,5 @@ CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x80000011
-ps2_keyboard_set_translation 0x5c05716a5d20 mode 1
-CR3 update: CR3=00000000
-Triple fault
+ps2_keyboard_set_translation 0x5cb8deb55500 mode 1
+qemu: QEMU: Terminated via GDBstub

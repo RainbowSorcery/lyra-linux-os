@@ -91,6 +91,7 @@ void init_task_managment()
 
     task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
     task_managment.current_task = 0;
+    task_managment.init_state = 1;
 }
 
 // 首个任务初始化 需要设置第一个任务的任务段 tr寄存器 才能进行下一个任务的切换
@@ -174,34 +175,37 @@ void switch_to_tss(task_t* from, task_t* to)
 void task_time_tick()
 {
     irq_state_t state = irq_enter_protection();
+
     // 如果当前没进程在运行那么旧不进行切换
-    if (task_managment.current_task == 0)
+    if (task_managment.init_state != 1 || task_managment.current_task == 0)
     {
         log_printf("No process is running, no need to switch");
+        irq_leave_protection(state);
+
         return;
     }
+
+
 
     // 获取当前进程时间片
     task_t * current_task = task_current();
     // 时间片建议
     current_task->slice_ticks--;
-    // 判断时间片是否到0 如果到0则进行进程切换
-    if (current_task->slice_ticks <= 0)
+
+
+    // 遍历睡眠队列，判断是否到时间片，如果到时间片那么从睡眠队列移动到就绪队列中
+    list_t *sleep_list = &task_managment.sleep_list;
+
+    list_node_t *task_node = list_first(sleep_list);
+    // 判断时间片到0且有需要切换的进程 如果是则进行进程切换
+    if (task_node != 0 && current_task->slice_ticks <= 0) 
     {
         // 将当前运行的进程放入到就绪队列末尾
         current_task->slice_ticks = current_task->time_ticks;
         task_set_block(current_task);
         task_set_ready(current_task);
         task_dispach();
-    }
 
-    // 遍历睡眠队列，判断是否到时间片，如果到时间片那么从睡眠队列移动到就绪队列中
-    list_t *sleep_list = &task_managment.sleep_list;
-
-    list_node_t *task_node = list_first(sleep_list);
-
-    if (task_node != 0) 
-    {
         task_t *task = list_node_parent(task_node, task_t, run_node);
         unint32_t sleep_ticks = task->sleep_ticks;
         task->sleep_ticks = --sleep_ticks;
