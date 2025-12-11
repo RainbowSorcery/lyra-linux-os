@@ -12,7 +12,7 @@ semaphore_t sem;
 
 void kernel_init(boot_info_t *boot_info)
 {
-    memory_init(boot_info);
+    // memory_init(boot_info);
     cpu_init();
 }
 

@@ -31,6 +31,7 @@ typedef struct _task_t
     }state;
     // 任务名称
     char name[32];
+    // 任务段
     task_state_segemtn tss;
 
     // 当slice_ticks为0时进行进程切换

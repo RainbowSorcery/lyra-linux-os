@@ -1,3 +1,5 @@
+
+
 ## 磁盘映像文件
 
 ## RAW
@@ -990,6 +992,96 @@ G: 粒度。如果是0的话，limit单位为字节，如果是1的话，limit�
 D/B: size标识，如果是0则标识该段是16位保护模式的段，如果是1则是32位保护模式的段。保护模式分为两种，一种是16位的保护模式，一种是32位的保护模式。一般使用的都是32位保护模式，将该位设置成1即可。
 
 L: 用于标识该段是否支持长模式，也就是64位代码段。32位模式设置成0，64位模式设置成1即可。
+
+
+### 进程切换
+在实际使用操作系统的过程中，肯定是多个进程同时来进行执行的，而不是一个进程从头执行到尾，一直阻塞在一个进程中，如果想要实现多个进程同时执行的话，那么就需要完成进程切换功能。在单核CPU的场景下，根据时间片来划分进程执行时间，CPU快速完成切换，看起来似乎是多个进程同时在执行的。
+
+#### 任务状态段TSS
+在进行进程切换的时候，必须有个东西来保存进程上次执行的上下文信息，避免下次在进行进程切换的时候找不到要继续执行的位置，任务状态段就是来保证这个操作的。
+TSS段入图所示有以下几个部分组成:
+
+![image-20251201001342930](./assets/image-20251201001342930.png)
+
+|             字段             |                             作用                             |
+| :--------------------------: | :----------------------------------------------------------: |
+|             EIP              |                      程序执行的函数地址                      |
+|       ESP0、ESP1、ESP2       |                    三个特权级别的栈顶指针                    |
+|      Previous Task Link      | 前一个执行的任务的链接，可以使用这个字段来恢复上次执行的任务 |
+|        SS0、SS1、SS2         |                     三个特权级别的栈基址                     |
+|             CR3              |                  分页机制专属字段，页表基址                  |
+|            EFLAGS            |                       状态标志位寄存器                       |
+| EAX、EBX、ECX、EDX、EDI、ESI |                          通用寄存器                          |
+|             ESP              | 栈顶指针，在进行特权切换时会根据ESP0、ESP1、ESP2来自动进行填充 |
+|    GS、FS、DS、SS、CS、ES    |                           段寄存器                           |
+|     IDT Segment Selector     |  指向处理器要使用的IDT选择子，根据这个字段来执行相应的中断   |
+|     IO MAP Base Address      |                         IO位图基地址                         |
+
+
+
+```c
+// 任务状态段
+typedef struct _task_state_segement
+{
+    unint32_t pre_link;
+    unint32_t esp0, ss0, esp1, ss1, esp2, ss2;
+    unint32_t cr3;
+    unint32_t eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
+    unint32_t es, cs, ss, ds, fs, gs;
+    unint32_t idt;
+    unint32_t iomap;
+} task_state_segemtn;
+```
+
+如下所示定义了一个任务的抽象结构体，其中枚举中定义了任务的状态信息、任务就绪队列节点、所有进程队列节点、信号量等待节点。
+其中run_node、all_node、wait_node可以根据这些节点找到task结构体，或者整个节点列表。
+
+```c
+
+typedef struct _task_t
+{
+    // 就绪队列节点
+    list_node_t run_node;
+
+    // 所有进程队列节点
+    list_node_t all_node;
+
+    // 信号量等待节点
+    list_node_t wait_node;
+
+    // 任务状态
+    enum {
+        // 创建
+        CREATE,
+        // 正在运行
+        RUNNING,
+        // 睡眠
+        SLEEP,
+        // 准备好了
+        READY,
+        // 等待
+        WAIITING
+    }state;
+    // 任务名称
+    char name[32];
+
+    // tss段
+    task_state_segemtn tss;
+
+    // 当slice_ticks为0时进行进程切换
+    unint32_t slice_ticks;
+
+    // 总的时间片数 用于初始化slice_ticks
+    unint32_t time_ticks;
+
+    // 休眠时间片 
+    unint32_t sleep_ticks;
+
+    // gdt偏移
+    int tss_sel;
+} task_t;
+```
+
 
 
 

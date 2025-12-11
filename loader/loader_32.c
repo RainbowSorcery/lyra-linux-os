@@ -85,7 +85,7 @@ void loader_kernel()
 {
     read_disk(100, 500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
 
-    enable_page_mode();
+    // enable_page_mode();
 
     ((void (*)(boot_info_t *))0x100000)(&boot_info);
 
