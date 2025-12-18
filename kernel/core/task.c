@@ -174,7 +174,7 @@ void task_time_tick()
 {
     irq_state_t state = irq_enter_protection();
 
-    // 如果当前没进程在运行那么旧不进行切换
+    // 如果当前没进程在运行或任务管理器未初始化那么旧不进行切换
     if (task_managment.init_state != 1 || task_managment.current_task == 0)
     {
         log_printf("No process is running, no need to switch");

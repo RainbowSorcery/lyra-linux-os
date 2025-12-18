@@ -2,6 +2,7 @@
 #include "../include/tools/klib.h"
 
 
+// 计算页数 
 int bitmap_byte_count(int bit_count)
 {
     int bytes = bit_count / 8;
@@ -12,6 +13,7 @@ int bitmap_byte_count(int bit_count)
     return bytes;
 }
 
+// 位图初始化
 void bitmap_init(bit_map_t *bitmap, unit8_t *bits, int count, int init_bit)
 {
     bitmap->bit_count = count;

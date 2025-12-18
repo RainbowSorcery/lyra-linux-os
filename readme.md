@@ -1083,7 +1083,315 @@ typedef struct _task_t
 ```
 
 
+初始化tss的流程如下所示:
+1. 从gdt中获取一个空闲段作为tss段。
+2. 从内存中开辟一块内存空间存储tss段属性。
+3. 初始化tss构造体各个字段
+4. 初始化时间片相关配置
+```c
+uint16_t gdt_alloc_desc() 
+{
+    irq_state_t state = irq_enter_protection();
+    for (int i = 1; i < GDT_TABLE_SIZE; i++) 
+    {
+        segment_desc_t *desc = gdt_table + i;
+        // 如果属性字段是空的，那么表示这个段是空的 可以作为tss段
+        if (desc->attr == 0)
+         {
+             irq_leave_protection(state);
+             return i * sizeof(segment_desc_t);
+         }
+    }
+    irq_leave_protection(state);
 
+    return -1;
+}
+
+int tss_init(task_t *task, unint32_t entry, unint32_t esp) 
+{
+    int tss_sel = gdt_alloc_desc();
+    if (tss_sel < 0) {
+        log_printf("alloc tss failed.. ");
+        return;
+    }
+
+    segement_desc_set(tss_sel, (unint32_t)sizeof(task_state_segemtn), (unint32_t)&(task)->tss, SEG_P | SEG_DPL0 | SEG_TYPE_TSS);
+
+    kernel_memset(&task->tss, 0, sizeof(task_state_segemtn));
+    // 程序执行地址
+    task->tss.eip = entry;
+    // 程序栈
+    task->tss.esp0 = task->tss.esp = esp;
+    // 平坦模型 栈段设置成数据段 其他寄存器设置成代码段
+    task->tss.ss = task->tss.ss0 = KENEL_SECTION_DS;
+    task->tss.es = task->tss.ds = task->tss.fs = task->tss.gs = KENEL_SECTION_DS;
+    task->tss.cs = KENEL_SECTION_CS;
+
+    // 根据手册设置eflag寄存器，if位设置成0，避免tss切换后中断无法响应，第二位固定设置成1
+    task->tss.eflags = EFLAGS_DEFAULT | EFLAGS_IF;
+
+    task->tss_sel = tss_sel;
+   
+    // 时钟周期数
+    task->time_ticks = 10;
+    task->slice_ticks = task->time_ticks;
+
+    return 0;
+}
+```
+
+然后我们抽象了一个任务管理器的结构体专门来管理我们系统中的任务，其中前几个list中保存了各个状态的任务信息，字段如注释所示
+
+```c
+
+// 任务管理器
+typedef struct _task_managemnet_t
+{
+    // 就绪进行队列
+    list_t ready_list;
+    // 所有进程队列
+    list_t task_list;
+
+    // 休眠队列
+    list_t sleep_list;
+
+    // 任务管理器初始化状态
+    int init_state;
+
+    // 当前正在运行的任务
+    task_t *current_task;
+
+    // 空闲进程 当所有进程都进行休眠了，那么就跳到这个空闲进程继续执行
+    task_t idle_task;
+
+    // 首个任务
+    task_t first_task;
+} task_managemnet_t;
+```
+
+任务管理器初始化倒是没什么要说的，级别上就是初始化队列信息，初始化空闲任务信息，初始化初始值。
+```c
+// 初始化任务管理器
+void init_task_managment() 
+{
+    list_init(&task_managment.ready_list);
+    list_init(&task_managment.task_list);
+    list_init(&task_managment.sleep_list);
+
+    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
+    task_managment.current_task = 0;
+    task_managment.init_state = 1;
+}
+```
+
+任务初始化流程如下所示:
+1. 初始化tss表。
+2. 初始化节点信息。
+3. 将当前任务添加到就绪队列中。
+
+```c
+int task_init(task_t *task, unint32_t entry, unint32_t esp, char* name)
+{
+    irq_state_t state =  irq_enter_protection();
+    tss_init(task, entry, esp);
+
+    list_node_init(&task->run_node);
+    list_node_init(&task->all_node);
+    list_node_init(&task->wait_node);
+
+    kernel_strcpy_size(task->name, name, 32);
+    task->state = CREATE;
+
+    // 将任务添加到就绪队列中
+    task_set_ready(task);
+
+    list_last_insert(&task_managment.task_list, &task->all_node);
+    irq_leave_protection (state);
+    return 0;
+}
+
+
+void task_set_ready(task_t *task) {
+    // 如果当前进程是空闲进程那么就不需要插入到就绪队列中
+    if (task == &task_managment.idle_task) 
+    {
+        return;
+    }
+
+    list_last_insert(&task_managment.ready_list, &task->run_node);
+    task->state = READY;
+}
+```
+
+首个任务的初始化，也就是当前正在执行内核的程序的任务
+1. 首个任务初始化首先需要初始化tss信息以及任务相关附属属性信息。
+2. 将任务tss的gdt段写入到
+3. 调用ltr指令告知任务段所在位置。
+4. 将任务管理器的当前在运行的任务设置为当前初始化完成的任务。
+
+```c
+// 首个任务初始化 需要设置第一个任务的任务段 tr寄存器 才能进行下一个任务的切换
+void task_first_init()
+{
+    task_init(&task_managment.first_task, 0, 0, "first task");
+    write_tr(task_managment.first_task.tss_sel);
+    task_managment.current_task = &task_managment.first_task;
+}
+```
+任务之间的调度的话就要用到时钟中断了，根据时钟中断来判断当前任务是否有空闲时间片，如果没空闲时间片的话那么就从就绪队列中获取任务进行切换。
+时钟中断的handler实现如下所示，会每进行一次时钟中断都会进行一次任务切换校验。
+```c
+void do_handler_time(exception_frame_t *frame)
+{
+    // 告诉8259a中断处理完成 不然无法触发下一次中断 必须先响应中断处理完成才能做具体业务，不然在函数调度的过程中可能打断EOI的执行，导致后续中断无法接收到
+    pic_send_eoi(0x20);
+
+    sys_tick++;
+
+    // 执行进程调度
+    task_time_tick();
+
+}
+```
+
+任务切换的业务逻辑倒是也不是很难，基本上就是触发时钟中断的时候，进程所属时间片-1，当时间片减至0时，那么就去判断就绪队列中是否有需要切换的任务，如果有那么执行任务切换，并把当前任务加到就绪队列末尾中。之后顺手遍历睡眠队列，如果睡眠队列的睡眠时间片也到0了，那么一并也加入到就绪队列中。
+```c
+void task_time_tick()
+{
+    irq_state_t state = irq_enter_protection();
+
+    // 如果当前没进程在运行或任务管理器未初始化那么旧不进行切换
+    if (task_managment.init_state != 1 || task_managment.current_task == 0)
+    {
+        log_printf("No process is running, no need to switch");
+        irq_leave_protection(state);
+
+        return;
+    }
+
+    // 获取当前进程时间片
+    task_t * current_task = task_current();
+    // 时间片-1
+    current_task->slice_ticks--;
+    // 判断时间片到0且有需要切换的进程 如果是则进行进程切换
+    list_t *ready_task_list = &task_managment.ready_list;
+    list_node_t *ready_node = list_first(ready_task_list);
+
+    if (current_task->slice_ticks <= 0 && ready_node != 0x00)
+    {
+        // 将当前运行的进程放入到就绪队列末尾
+        current_task->slice_ticks = current_task->time_ticks;
+        task_set_block(current_task);
+        task_set_ready(current_task);
+        task_dispach();
+    }
+
+    // 遍历睡眠队列，判断是否到时间片，如果到时间片那么从睡眠队列移动到就绪队列中
+    list_t *sleep_list = &task_managment.sleep_list;
+
+    list_node_t *task_node = list_first(sleep_list);
+
+    if (task_node != 0) 
+    {
+   
+        task_t *task = list_node_parent(task_node, task_t, run_node);
+        unint32_t sleep_ticks = task->sleep_ticks;
+        task->sleep_ticks = --sleep_ticks;
+
+        if (sleep_ticks == 0) 
+        {
+            task_set_wakeup(task);
+            task_set_ready(task);
+            task_dispach();
+        }
+
+        while (task_node->next != 0)
+        {
+            task_node = task_node->next;
+            task_t *next_task = list_node_parent(task_node, task_t, run_node);
+            // 遍历整个列表睡眠时间片到了再进行进程切换 之前没做判断直接切换 导致即便是运行的是空闲进程夜进行了切换最终出现异常操作
+            if (next_task->sleep_ticks == 0)
+            {
+                task_set_wakeup(next_task);
+                task_set_ready(next_task);
+                task_dispach();
+            }
+
+        }
+    }
+    irq_leave_protection(state);
+}
+```
+任务切换的业务逻辑倒是挺简单的，基本上就是拿到tss的gdt表下标，然后拼接段选择子，之后进行远跳即可。
+```c
+void task_dispach() 
+{
+    irq_state_t state =  irq_enter_protection();
+ 
+    task_t *from_task = task_managment.current_task;
+    task_t *to_task = task_next_run();
+
+    // 如果当前就绪队列为空且正在运行空闲任务，那么不进行任务切换
+    if ( task_managment.current_task == &task_managment.idle_task 
+        || from_task == to_task)
+    {
+        irq_leave_protection (state);
+        return;
+    }
+
+    to_task->state = RUNNING;
+    task_managment.current_task = to_task;
+    switch_to_tss(from_task, to_task);
+    irq_leave_protection (state);
+}
+void switch_to_tss(task_t* from, task_t* to)
+{
+    // log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
+    far_jump(to->tss_sel, 0);
+}
+```
+
+睡眠的业务逻辑处理也是挺简单的，首先修改任务状态未休眠状态，之后从队列中移除并加入到睡眠队列中，然后计算睡眠所需时间片，之后进行一次任务切换即可。
+```c
+// 进行休眠
+void sys_sleep(unint32_t ms)
+{
+    irq_state_t state = irq_enter_protection();
+
+    // 将当前进程从就绪队列中移除
+    task_t *current_tasak = task_current();
+    task_set_block(current_tasak);
+
+    // 计算休眠时间片
+    unint32_t sleep_ticks = ms / OS_TICKS_MS;
+    if (ms % OS_TICKS_MS > 0) 
+    {
+        sleep_ticks++;
+    }
+
+    // 进行休眠
+    task_set_sleep(current_tasak, sleep_ticks);
+
+    irq_leave_protection(state);
+}
+
+void task_set_sleep(task_t *task, unint32_t ticks)
+{
+    if (ticks <= 0) 
+    {
+        return;
+    }
+
+    // 将进程从就绪队列中移除并加入到休眠队列中
+    task->state = SLEEP;
+    task->sleep_ticks = ticks;
+    list_last_insert(&task_managment.sleep_list, &task->run_node);
+    // 进行进程切换
+    task_dispach();
+
+}
+
+```
 
 ### 保护模式下的内存管理
 
@@ -1117,7 +1425,7 @@ typedef struct _task_t
 
 ![image-20250502135939764](./assets/image-20250502135939764.png)
 
-- 多任务运行效率，物理内存为10个G，无法同时运行超过10个G的进程。如果采用虚拟内存的话，进程一般活动内存只占总内存的20%，将剩余的80%持久化到硬破中，这80%就能给其他进程使用，当进程需要使用这些数据的时候，可以从硬破中将数据加载到内存中进行使用。
+- 多任务运行效率，物理内存为10个G，无法同时运行超过10个G的进程。如果采用虚拟内存的话，进程一般活动内存只占总内存的20%，将剩余的80%持久化到硬盘中，这80%就能给其他进程使用，当进程需要使用这些数据的时候，可以从硬破中将数据加载到内存中进行使用。
 
 
 
@@ -1128,3 +1436,47 @@ typedef struct _task_t
 为了解决这种浪费空间的问题，多级页表诞生了，在多级页表下，首先操作系统会按按框将内存分进行分割，如下图的T1和T2，虚拟内存组成结构是前10位表示页目录，中间十位是页索引，剩余12位是页偏移，虚拟内存在进行访问时，首先会根据前10位去找，去找页目录，然后根据页目录就找到页基址，加12位偏移就可以找到指定页，然后页加页偏移就可以找到真实的地址。
 
 ![image-20250514001841645](./assets/image-20250514001841645.png)
+
+#### 位图
+可以存储一个bit数组来表示页是否分配或回收，如果是1表示被分配了，如果是0表示页空闲。
+如下所示定义一个位图的结构体，在这个结构体中有两个属性，一个是表示页表数，一个标识页表列表。
+```c
+typedef struct _bitmap_t
+{
+    // 页表位数 也就是页表个数
+    int bit_count;
+    // 页表数据指针
+    unit8_t *bits;
+} bit_map_t;
+```
+位图初始化函数如下图所示，根据传入的参数分配内存空间，例如位指针、bit位数据、位图数以及位图初始值   
+```c
+// 位图初始化
+void bitmap_init(bit_map_t *bitmap, unit8_t *bits, int count, int init_bit)
+{
+    bitmap->bit_count = count;
+    bitmap->bits = bits;
+
+    int bytes = bitmap_byte_count(count);
+
+    kernel_memset(bits, init_bit, bytes);
+}
+
+// 将位数转换为字节数，每8位页表表示一个字节位，如果有余数那么页+1 
+int bitmap_byte_count(int bit_count)
+{
+    int bytes = bit_count / 8;
+    if (bit_count % 8 != 0)
+    {
+        bytes++;
+    }
+    return bytes;
+}
+```
+有的时候需要判断指定页是否被占用，可以利用以下函数来实现，这个方法很简单，之间页右移与1即可
+```c
+int bitmap_get_bit(bit_map_t *bitmap, unit8_t index)
+{
+    return bitmap->bits[index / 8] >> (index % 8) & 0x01;
+}
+``` 

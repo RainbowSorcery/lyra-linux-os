@@ -38,7 +38,7 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
-        // sys_sleep(1000);
+        sys_sleep(1000);
         // semaphore_wait(&sem);
     }
 }
