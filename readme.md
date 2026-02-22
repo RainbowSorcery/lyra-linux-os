@@ -1473,10 +1473,69 @@ int bitmap_byte_count(int bit_count)
     return bytes;
 }
 ```
-有的时候需要判断指定页是否被占用，可以利用以下函数来实现，这个方法很简单，之间页右移与1即可
+有的时候需要判断指定页是否被占用，可以利用以下函数来实现，这个方法很简单，之间页数右移与1即可，如果返回0表示未被占用
 ```c
 int bitmap_get_bit(bit_map_t *bitmap, unit8_t index)
 {
     return bitmap->bits[index / 8] >> (index % 8) & 0x01;
 }
 ``` 
+
+在为进程或操作系统分配或释放内存时，需要将连续几个页设置为占用或释放，用以下函数可以实现这个操作
+```c
+// 将连续指定位图设置成指定值
+void bitmap_set_bit(bit_map_t *bitmap, int index, int count, int bit)
+{
+    for (int i = 0; i < count && (index < bitmap->bit_count); i++)
+    {
+        if (bit)
+        {
+            bitmap->bits[index / 8] |= (1 << (index % 8 + i));
+        }
+        else 
+        {
+            bitmap->bits[index / 8] &= ~(1 << (index % 8 + i));
+        }
+    }
+}
+```
+再分配内存的时候可以根据内存大小来找位图并分配成另一个值，如下图所示:
+```c
+
+// 寻找指定长度为指定值的位图，设置成另一个值
+int bitmap_alloc_nbits(bit_map_t *bitmap, int bit, int count)
+{
+    int serach_index = 0;
+    int ok_index = -1;
+    while (serach_index < bitmap->bit_count)
+    {
+        // 判断当前字节是否为目标字节 如果不是则跳出循环遍历下一个位图
+        if (bitmap_get_bit(bitmap, serach_index) != bit)
+        {
+            serach_index++;
+            continue;
+        }
+
+        ok_index = serach_index;
+        int i = 0;
+        // 遍历后面几个连续的位图值是否为目标值，如果有一个不是则跳出循环，重新进行遍历
+        for (i = 0; i < count && serach_index < bitmap->bit_count; i++)
+        {
+            if (bitmap_get_bit(bitmap, serach_index) != bit)
+            {
+                ok_index = -1;
+                break;
+            }
+        }
+        // 如果遍历了整个长度都是目标值那么同意修改位图
+        if (i >= count)
+        {
+            bitmap_set_bit(bitmap, serach_index, count, ~bit);
+            return serach_index;
+        }
+    }
+
+    return -1;
+}
+```
+

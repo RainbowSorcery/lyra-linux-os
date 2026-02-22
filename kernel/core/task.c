@@ -34,6 +34,8 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
     // 根据手册设置eflag寄存器，if位设置成0，避免tss切换后中断无法响应，第二位固定设置成1
     task->tss.eflags = EFLAGS_DEFAULT | EFLAGS_IF;
 
+    task->tss.cr3 = read_cr3();
+
     task->tss_sel = tss_sel;
     task->time_ticks = 10;
     task->slice_ticks = task->time_ticks;
@@ -166,7 +168,7 @@ task_t *task_current()
 
 void switch_to_tss(task_t* from, task_t* to)
 {
-    // log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
+    log_printf("Preparing to switch processes. Current process name: %s, Target process name: %s", from->name, to->name);
     far_jump(to->tss_sel, 0);
 }
 

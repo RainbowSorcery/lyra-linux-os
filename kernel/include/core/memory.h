@@ -26,5 +26,20 @@ typedef struct _addr_alloc_t
     // 页大小
     unint32_t page_size;
 } addr_alloc_t;
-;
+
 void memory_init(boot_info_t *boot_info);
+
+
+typedef struct _memeroy_map_t
+{
+    // 线性地址起始地址
+    void *v_start;
+    // 线性地址结束地址
+    void *v_end;
+    // 物理起始地址
+    void *p_start;
+
+    // 特权
+    unint32_t *perm;
+} memory_map_t;
+

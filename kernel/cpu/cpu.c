@@ -73,5 +73,6 @@ void cpu_init()
     init_keyboard();
     mouse_init();
     log_init();
-    ;
+    
 }
+

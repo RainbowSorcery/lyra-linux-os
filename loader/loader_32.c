@@ -69,7 +69,8 @@ static void read_disk(unint32_t sector, uint16_t selctor_count, unit8_t *buffer)
 void enable_page_mode()
 {
     static unint32_t page_dir[1024] __attribute__((aligned(4096)));
-    page_dir[0] = PDE_P | PDE_W | PDE_PS | 0;
+    page_dir[0] = PDE_P | PDE_W | PDE_PS | 0x00000000;
+
 
     unint32_t cr4 = read_cr4();
     cr4 = cr4 | (CR4_PSE);
@@ -85,7 +86,7 @@ void loader_kernel()
 {
     read_disk(100, 500, (unit8_t *)SYSTEM_KERNEL_ADDRESS);
 
-    // enable_page_mode();
+    enable_page_mode();
 
     ((void (*)(boot_info_t *))0x100000)(&boot_info);
 
