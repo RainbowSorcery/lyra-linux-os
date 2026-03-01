@@ -12,13 +12,17 @@ SECTIONS {
     }
     
     PROVIDE(e_text = .);
+    . = ALIGN(4096);
+
     PROVIDE(s_data = .);
     .data : {
         *(.data)
     }
     PROVIDE(e_data = .);
+    PROVIDE(s_bss = .);
     .bss : {
         *(.bss)
     }
+    PROVIDE(e_bss = .);
     PROVIDE(mem_free_start = .);
 }

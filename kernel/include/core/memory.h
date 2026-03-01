@@ -15,7 +15,7 @@ typedef struct _addr_alloc_t
     mutex_t lock;
 
     // 位图
-    bit_map_t *bitmap;
+    bit_map_t bitmap;
 
     // 开始地址
     unint32_t start;

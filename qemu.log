@@ -202,26 +202,26 @@ CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 0
-ps2_keyboard_set_translation 0x61553c10b920 mode 1
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 0
+ps2_keyboard_set_translation 0x5b067360d400 mode 1
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 1
-ps2_keyboard_set_translation 0x61553c10b920 mode 1
+ps2_keyboard_set_translation 0x5b067360d400 mode 1
+ps2_keyboard_set_translation 0x5b067360d400 mode 1
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
@@ -519,6 +519,5 @@ CR0 update: CR0=0x00000011
 CR0 update: CR0=0x00000010
 CR0 update: CR0=0x00000011
 CR0 update: CR0=0x80000011
-ps2_keyboard_set_translation 0x61553c10b920 mode 1
-CR3 update: CR3=00104000
-Triple fault
+ps2_keyboard_set_translation 0x5b067360d400 mode 1
+CR3 update: CR3=00105000

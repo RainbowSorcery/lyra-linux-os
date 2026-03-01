@@ -7,6 +7,12 @@
 // 页目录表项数
 #define PDE_COUNT 1024
 
+#define PTE_P 1
+
+#define PDE_W (1 << 1)
+#define PTE_W (1 << 1)
+#define PDE_U (1 << 2)
+
 /**
  * 页目录结构
  */
@@ -84,6 +90,34 @@ typedef union _pte_t
 static inline void mmu_set_page_dir(unint32_t addr) 
 {
     write_cr3(addr);
+}
+
+
+/**
+ * 根据线性地址的规则取前10位就是页目录的索引
+ */
+static inline unint32_t ped_index(unint32_t v_start) 
+{
+    return v_start >> 22;
+}
+
+
+/**
+ * 根据线性地址的规则取中间10位就是页表的索引
+ */
+
+ static inline unint32_t pte_index(unint32_t v_start) 
+ {
+     return (v_start >> 12) & 0x3ff;
+ }
+
+
+ /**
+  * 获取页目录对应的页表地址 20位中的高12位存储的物理地址
+  */
+static inline unint32_t pde_addr(pde_t *pde) 
+{
+    return pde->phy_pt_addr << 12;
 }
 
 #endif

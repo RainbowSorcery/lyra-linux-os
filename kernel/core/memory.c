@@ -3,6 +3,7 @@
 #include "../include/tools/klib.h"
 #include "../include/core/mmu.h"
 
+// 位图对象 用于分配内存
 static addr_alloc_t paddr_alloc;
 
 // 页目录列表
@@ -13,9 +14,11 @@ static void addr_alloc_init(addr_alloc_t *addr_alloc, unit8_t *bits, unint32_t s
     mutex_init(&addr_alloc->lock);
     addr_alloc->page_size = page_size;
     addr_alloc->size = size;
-    addr_alloc->start = start;
+
+    int bytes = bitmap_byte_count(addr_alloc->size / page_size);
+    addr_alloc->start = bits + bytes;
     // 位图数 / 页大小计算出可以创建多少页
-    bitmap_init((bit_map_t*)&addr_alloc->bitmap, bits, addr_alloc->size / page_size, 0);
+    bitmap_init(&addr_alloc->bitmap, bits, addr_alloc->size / page_size, 0);
 }
 
 // 内存分配
@@ -23,7 +26,7 @@ static unint32_t addr_alloc_page(addr_alloc_t *alloc, int page_count)
 {
     mutex_lock(&alloc->lock);
 
-    int start_index =  bitmap_alloc_nbits(alloc->bitmap, 0, page_count);
+    int start_index =  bitmap_alloc_nbits(&alloc->bitmap, 0, page_count);
     if (start_index >= 0)
     {
         // 返回开始地址 page大小 * 开始索引 + 偏移计算得出
@@ -41,7 +44,7 @@ static void addr_alloc_free(addr_alloc_t *alloc, int addr, int page_count)
 
     mutex_lock(&alloc->lock);
     int pg_index = (addr - alloc->start) / alloc->page_size;
-    bitmap_set_bit(alloc->bitmap, pg_index, page_count, 0);
+    bitmap_set_bit(&alloc->bitmap, pg_index, page_count, 0);
 
     mutex_unlock(&alloc->lock);
 
@@ -69,23 +72,75 @@ void show_memory_info(boot_info_t *boot_info)
     }
 }
 
-
-int memory_create_map(pte_t *page_dir, unint32_t v_start, unint32_t p_addr, unint32_t page_count, unint32_t perm)
+pte_t *find_pte(pde_t *page_dir, unint32_t v_addr, unit8_t alloc) 
 {
-    for (int i = 0; i 《 page_count; i++)
+    // 根据索引下标寻找指定页目录
+    pde_t *pde =  page_dir + ped_index(v_addr);
+
+    // 页表项基地址
+    pte_t *base_page_table;
+
+    if (pde->present) {
+        base_page_table =(pte_t*) pde_addr(pde);
+    }
+    else
     {
-        pte_t *pre = find_pte();
+        // 分配页数据
+        if (alloc == 0)
+        {
+            return (pte_t *)0;
+        }
+
+        unint32_t addr = addr_alloc_page(&paddr_alloc, 1);
+        if (addr == 0 || addr == -1)
+        {
+            return (pte_t *)0;
+        }
+
+        base_page_table = (pte_t *) addr;
+
+        // 重新初始化内存数据，避免有错误信息
+        kernel_memset(base_page_table, 0, MEM_PAGE_SIZE);
+        pde->v = addr | PTE_P | PDE_U | PDE_W;
+    }
+
+    return base_page_table + pte_index(v_addr);
+}
+
+int memory_create_map(pde_t *page_dir, unint32_t v_addr, unint32_t p_addr, unint32_t page_count, unint32_t perm)
+{
+    for (int i = 0; i < page_count; i++)
+    {
+        log_printf("create map v-0x%x, p-0x%x, perm:0x%x", v_addr, p_addr, perm);
+        // 查找页表项 如果找不到则新建页表想
+        pte_t *pte = find_pte(page_dir, v_addr, 1);
+
+        if (pte == 0)
+        {
+            log_printf("create pte failed. pte=0");
+            return -1;
+        }
+
+
+        log_printf("pte addr:0x%x", (unint32_t)pte);
+        pte->v = p_addr | perm | PTE_P;
+
+        v_addr += MEM_PAGE_SIZE;
+        p_addr += MEM_PAGE_SIZE;
     }
 }
 
+/**
+ * 创建内存虚拟内存页
+ */
 void create_kernel_page()
 {
-    extern unit8_t s_text[], e_text[], s_data[], kener_base[], e_data[];
+    extern unit8_t s_text[], e_text[], s_data[], kener_base[], e_data[], s_bss[], e_bss[];
     static memory_map_t kernel_map[] =
         {
-            {kener_base, s_text, kener_base, 0},
+            {kener_base, s_text, kener_base, PTE_W},
             {s_text, e_text, s_text, 0},
-            {s_data, e_data, s_data, 0}
+            {s_data, e_bss, s_data, PTE_W}
         };
 
     // 初始化页表与线性地址与物理地址之间的映射
@@ -95,11 +150,13 @@ void create_kernel_page()
 
         unint32_t start = down2((unint32_t)map->v_start, MEM_PAGE_SIZE);
         unint32_t end = up2((unint32_t)map->v_end, MEM_PAGE_SIZE);
+        unint32_t paddr = down2((unint32_t)map->p_start, MEM_PAGE_SIZE);
+
 
         int page_count = (end - start) / MEM_PAGE_SIZE;
 
         // 建立虚拟内存与物理内存的映射关系
-        memory_create_map(kernel_page_dir, start, (unint32_t)map->p_start, page_count, map->perm);
+        memory_create_map(kernel_page_dir, start, (unint32_t)paddr, page_count, map->perm);
     }
 }
 

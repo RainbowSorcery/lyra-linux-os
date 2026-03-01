@@ -149,6 +149,14 @@ void kernel_itao(char *buffer, int num, int base)
         num *= -1;
     }
 
+    if (num == 0)
+    {
+        *p++ = '0';
+        *p = '\0';  // 添加字符串终止符
+        return;
+    }
+    
+
     int len = 0;
     char strBuffer[1024] = {};
     while (num != 0)
@@ -204,17 +212,19 @@ void kenerl_vsprintf(char *buffer, const char *fmt, va_list args)
                     *curr++ = *str++;
                 }
             }
-            else if (ch == 'd')
+            else if (ch == 'd') 
             {
                 int num = va_arg(args, int);
                 kernel_itao(curr, num, 10);
                 kenerl_strlen(curr);
+                curr += kenerl_strlen(curr);
             }
             else if (ch == 'x')
             {
                 int num = va_arg(args, int);
                 kernel_itao(curr, num, 16);
                 kenerl_strlen(curr);
+                curr += kenerl_strlen(curr);
             }
             else if (ch == 'c')
             {
@@ -229,21 +239,21 @@ void kenerl_vsprintf(char *buffer, const char *fmt, va_list args)
 }
 
 
-// 32位对齐
+// 32位对齐想下取整
 unint32_t down2(unint32_t size, unint32_t bound)
 {
     // 例如 32取整3  32 / 3 = 10 * 3 = 30，可以有30个对齐的
     return size / bound * bound;
 }
 
+// 32位对齐 向上取整
 unint32_t up2(unint32_t size, unint32_t bound)
 {
-    unint32_t result = size / bound;
+    unint32_t result = size;
 
     if (size % bound > 0)
     {
-        result++;
-    
+        result += bound - (size % bound);
     }
 
     return result;
