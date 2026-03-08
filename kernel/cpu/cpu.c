@@ -24,7 +24,8 @@ void segement_desc_set(int selector, unint32_t limit, unint32_t base, uint16_t a
         attr = attr | SEG_G;
     }
 
-    segment_desc_t *desc = gdt_table + (selector >> 3);
+    selector = selector / sizeof(segment_desc_t);
+    segment_desc_t *desc = &gdt_table[selector];
     desc->limit_0_15 = limit & 0xffff;
     desc->base_0_15 = base & 0xffff;
     desc->base_16_23 = (base >> 16) & 0xff;
@@ -44,7 +45,9 @@ uint16_t gdt_alloc_desc()
         if (desc->attr == 0)
          {
              irq_leave_protection(state);
-             return i * sizeof(segment_desc_t);
+             uint16_t table_index = i * sizeof(segment_desc_t);
+             irq_leave_protection(state);
+             return table_index;
          }
     }
     irq_leave_protection(state);
@@ -63,6 +66,15 @@ void init_gdt()
     segement_desc_set(KENEL_SECTION_DS, 0Xffffffff, 0, SEG_P | SEG_DPL0 | SEG_S_NORMAL | SEG_TYPE_DATA | SEG_TYPE_RW | SEG_D);
     segement_desc_set(KENEL_SECTION_CS, 0Xffffffff, 0, SEG_P | SEG_DPL0 | SEG_S_NORMAL | SEG_TYPE_CODE | SEG_TYPE_RW | SEG_D);
     lgdt((unint32_t)gdt_table, sizeof(gdt_table));
+}
+
+
+void gdt_free_sel(int tss_sel) 
+{
+    irq_state_t state = irq_enter_protection();
+    segment_desc_t *desc = gdt_table + (tss_sel >> 3);
+    desc->attr = 0;
+    irq_leave_protection(state);
 }
 
 void cpu_init()

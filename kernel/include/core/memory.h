@@ -43,3 +43,4 @@ typedef struct _memeroy_map_t
     unint32_t *perm;
 } memory_map_t;
 
+unint32_t memory_create_user_virtual_memory();

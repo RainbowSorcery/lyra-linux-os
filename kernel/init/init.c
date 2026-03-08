@@ -28,6 +28,8 @@ void list_test()
 static task_t first_task;
 // 设置程序单独的栈避免多个程序共同读写一个栈出现的异常操作
 static unint32_t init_task_stack[1024];
+
+static unint32_t first_task_stack[1024];
 static task_t init_task;
 
 
@@ -39,7 +41,7 @@ void init_task_entry()
     {
         count++;
         log_printf("init task count:%d", count);
-        sys_sleep(1000);
+        // sys_sleep(1000);
         // semaphore_wait(&sem);
     }
 }
@@ -50,7 +52,7 @@ void init_main()
     init_task_managment();
     int count = 0;
 
-    task_first_init();
+    task_first_init((unint32_t)init_main, (unint32_t)&init_task_stack[1024]);
     task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
 
     // semaphore_init(&sem, 1);

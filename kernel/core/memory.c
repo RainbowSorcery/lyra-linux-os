@@ -16,7 +16,7 @@ static void addr_alloc_init(addr_alloc_t *addr_alloc, unit8_t *bits, unint32_t s
     addr_alloc->size = size;
 
     int bytes = bitmap_byte_count(addr_alloc->size / page_size);
-    addr_alloc->start = bits + bytes;
+    addr_alloc->start = up2(bits + bytes, MEM_PAGE_SIZE);
     // 位图数 / 页大小计算出可以创建多少页
     bitmap_init(&addr_alloc->bitmap, bits, addr_alloc->size / page_size, 0);
 }
@@ -24,18 +24,19 @@ static void addr_alloc_init(addr_alloc_t *addr_alloc, unit8_t *bits, unint32_t s
 // 内存分配
 static unint32_t addr_alloc_page(addr_alloc_t *alloc, int page_count)
 {
-    mutex_lock(&alloc->lock);
+    // mutex_lock(&alloc->lock);
 
     int start_index =  bitmap_alloc_nbits(&alloc->bitmap, 0, page_count);
+    unint32_t result = -1;
     if (start_index >= 0)
     {
         // 返回开始地址 page大小 * 开始索引 + 偏移计算得出
-        return start_index * alloc->page_size + alloc->start;
+        result = start_index * alloc->page_size + alloc->start;
     }
 
-    mutex_unlock(&alloc->lock);
+    // mutex_unlock(&alloc->lock);
 
-    return -1;
+    return result;
 }
 
 
@@ -128,6 +129,7 @@ int memory_create_map(pde_t *page_dir, unint32_t v_addr, unint32_t p_addr, unint
         v_addr += MEM_PAGE_SIZE;
         p_addr += MEM_PAGE_SIZE;
     }
+     return 0;  
 }
 
 /**
@@ -138,9 +140,10 @@ void create_kernel_page()
     extern unit8_t s_text[], e_text[], s_data[], kener_base[], e_data[], s_bss[], e_bss[];
     static memory_map_t kernel_map[] =
         {
+            {(void*)0x0, (void*)0x1000, (void*)0x0, PTE_W},
             {kener_base, s_text, kener_base, PTE_W},
             {s_text, e_text, s_text, 0},
-            {s_data, e_bss, s_data, PTE_W}
+            {s_data, (void*) MEM_EBDA_START, s_data, PTE_W}
         };
 
     // 初始化页表与线性地址与物理地址之间的映射
@@ -160,6 +163,31 @@ void create_kernel_page()
     }
 }
 
+unint32_t memory_create_user_virtual_memory() 
+{
+    // 1. 获取一页数据用于创建页表项
+    pte_t* page_dir = (pte_t *)addr_alloc_page(&paddr_alloc, 1);
+    if (page_dir == 0) {
+        return 0;
+    }
+    kernel_memset((void *)page_dir, 0, MEM_PAGE_SIZE);
+
+
+    // 0x80000000以上空间作为进程内存 以下作为与操作系统共享的内存，方便调用操作系统API
+    unint32_t index = ped_index(MEM_TASK_BASE);
+
+    log_printf("[MEM] user_pde_start = %d (0x%08x)\n", index, MEM_TASK_BASE);
+    
+
+    for (int i = 0; i < index; i++)
+    {
+        page_dir[i].v = kernel_page_dir[i].v;
+    }
+
+    log_printf("[MEM] Copied %d page directory entries\n", index);
+    return (unint32_t)page_dir;
+}
+
 void memory_init(boot_info_t *boot_info)
 {
     extern unit8_t *mem_free_start;
@@ -175,7 +203,7 @@ void memory_init(boot_info_t *boot_info)
         
     unit8_t *mem_free = (unit8_t *)&mem_free_start;
 
-    addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, mem_up1MB_free / MEM_PAGE_SIZE);
+    addr_alloc_init(&paddr_alloc, mem_free, MEM_EXT_START, mem_up1MB_free, down2(mem_up1MB_free / MEM_PAGE_SIZE, MEM_PAGE_SIZE));
 
     // 跳过位图缓存区内存位置
     mem_free += bitmap_byte_count(paddr_alloc.size / MEM_PAGE_SIZE);

@@ -12,6 +12,8 @@
 #define PDE_W (1 << 1)
 #define PTE_W (1 << 1)
 #define PDE_U (1 << 2)
+#define MEM_TASK_BASE 0x8000000
+#define MEM_EBDA_START 0x800000
 
 /**
  * 页目录结构

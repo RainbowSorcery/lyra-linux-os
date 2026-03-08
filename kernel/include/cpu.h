@@ -85,4 +85,8 @@ void cpu_init();
 // 获取一个空闲的gdt表项，用于设置tss段 返回描述符选择子
 uint16_t gdt_alloc_desc();
 
+
+// 释放gdt表项
+void gdt_free_sel(int tss_sel);
+
 #endif // CPU_H

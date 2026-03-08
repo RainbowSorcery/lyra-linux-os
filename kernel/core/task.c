@@ -34,7 +34,15 @@ int tss_init(task_t *task, unint32_t entry, unint32_t esp)
     // 根据手册设置eflag寄存器，if位设置成0，避免tss切换后中断无法响应，第二位固定设置成1
     task->tss.eflags = EFLAGS_DEFAULT | EFLAGS_IF;
 
-    task->tss.cr3 = read_cr3();
+    unint32_t page_dir = memory_create_user_virtual_memory();
+    
+    if (page_dir == 0) {
+        log_printf("create user virtual memory failed..");
+        gdt_free_sel(tss_sel);
+        return -1;
+    }
+
+    task->tss.cr3 = page_dir;
 
     task->tss_sel = tss_sel;
     task->time_ticks = 10;
@@ -91,15 +99,15 @@ void init_task_managment()
     list_init(&task_managment.task_list);
     list_init(&task_managment.sleep_list);
 
-    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
+    // task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
     task_managment.current_task = 0;
     task_managment.init_state = 1;
 }
 
 // 首个任务初始化 需要设置第一个任务的任务段 tr寄存器 才能进行下一个任务的切换
-void task_first_init()
+void task_first_init(unint32_t entry, unint32_t stack)
 {
-    task_init(&task_managment.first_task, 0, 0, "first task");
+    task_init(&task_managment.first_task, entry, stack, "first task");
     write_tr(task_managment.first_task.tss_sel);
     task_managment.current_task = &task_managment.first_task;
 }

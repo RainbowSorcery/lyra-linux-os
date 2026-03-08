@@ -29,7 +29,7 @@ int is_transmit_empty()
 
 void log_printf(const char *fmt, ...)
 {
-    mutex_lock(&lock);
+    // mutex_lock(&lock);
     char str_buffer[128];
     va_list args;
     va_start(args, fmt);
@@ -50,6 +50,6 @@ void log_printf(const char *fmt, ...)
     outb(PORT, '\r');
     outb(PORT, '\n');
 
-    mutex_unlock(&lock);
+    // mutex_unlock(&lock);
 
 }
