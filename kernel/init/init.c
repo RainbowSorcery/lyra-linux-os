@@ -33,17 +33,17 @@ static unint32_t first_task_stack[1024];
 static task_t init_task;
 
 
-void init_task_entry() 
+void move_to_first_task()
 {
-    int count = 0;
+    task_t *first_task = task_current();
+    log_printf("move to first task, entry=0x%x", first_task->tss.eip);
 
-    for (;;)
-    {
-        count++;
-        log_printf("init task count:%d", count);
-        // sys_sleep(1000);
-        // semaphore_wait(&sem);
-    }
+    __asm__ volatile (
+        "movl %0, %%esp\n"
+        "jmp *%1\n"
+        :
+        : "r"(first_task_stack + 1024), "r"(first_task->tss.eip)
+    );
 }
 
 void init_main()
@@ -52,17 +52,6 @@ void init_main()
     init_task_managment();
     int count = 0;
 
-    task_first_init((unint32_t)init_main, (unint32_t)&init_task_stack[1024]);
-    task_init(&init_task, (unint32_t)init_task_entry, (unint32_t)&init_task_stack[1024], "init_task");
-
-    // semaphore_init(&sem, 1);
-
-    for (;;)
-    {
-        count++;
-        log_printf("init main count:%d", count);
-
-        // semaphore_notify(&sem);
-        // sys_sleep(1000);
-    }
+    task_first_init();
+    move_to_first_task();
 }

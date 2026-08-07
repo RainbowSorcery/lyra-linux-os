@@ -173,7 +173,7 @@ unint32_t memory_create_user_virtual_memory()
     kernel_memset((void *)page_dir, 0, MEM_PAGE_SIZE);
 
 
-    // 0x80000000以上空间作为进程内存 以下作为与操作系统共享的内存，方便调用操作系统API
+    // 虚拟内存0x80000000以上空间作为进程内存 以下作为与操作系统共享的内存，方便调用操作系统API
     unint32_t index = ped_index(MEM_TASK_BASE);
 
     log_printf("[MEM] user_pde_start = %d (0x%08x)\n", index, MEM_TASK_BASE);

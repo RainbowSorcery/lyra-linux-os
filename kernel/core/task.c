@@ -6,6 +6,8 @@
 #include "../../common/cpu_instr.h"
 #include "../include/irq.h"
 #include "../include/device/time.h"
+#include "../include/core/mmu.h"
+#include "../include/core/memory.h"
 
 // 任务管理器
 static task_managemnet_t task_managment;
@@ -99,17 +101,28 @@ void init_task_managment()
     list_init(&task_managment.task_list);
     list_init(&task_managment.sleep_list);
 
-    // task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
+    task_init(&task_managment.idle_task, (unint32_t)&idle_task_entry, (unint32_t)&idlte_task_stack[1024], "idle task");
     task_managment.current_task = 0;
     task_managment.init_state = 1;
 }
 
 // 首个任务初始化 需要设置第一个任务的任务段 tr寄存器 才能进行下一个任务的切换
-void task_first_init(unint32_t entry, unint32_t stack)
+void task_first_init()
 {
-    task_init(&task_managment.first_task, entry, stack, "first task");
+    void first_task_entry();
+
+    
+    extern unit8_t s_first_task[], e_first_task[];
+
+    unint32_t copy_size = (unint32_t)(e_first_task - e_first_task);
+
+    unint32_t alloc_size = 10 * MEM_PAGE_SIZE;
+
+    unint32_t first_start = (unint32_t)first_task_entry;
+    task_init(&task_managment.first_task, first_start, 0, "first task");
     write_tr(task_managment.first_task.tss_sel);
     task_managment.current_task = &task_managment.first_task;
+    mmu_set_page_dir(task_managment.first_task.tss.cr3);
 }
 
 // 获取首个任务

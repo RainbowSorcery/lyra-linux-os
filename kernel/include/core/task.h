@@ -79,7 +79,7 @@ typedef struct _task_managemnet_t
 void init_task_managment();
 
 // 首个任务初始化
-void task_first_init(unint32_t entry, unint32_t stack);
+void task_first_init();
 
 // 获取首个任务
 task_t *task_first_task();
